@@ -14,6 +14,21 @@ describe('SnippetStore', () => {
     expect(snippets.some((s) => s.trigger === '/omw')).toBe(true);
   });
 
+  it('does NOT re-seed initial snippets if user deleted them all', async () => {
+    await SnippetStore.init();
+    const all = await SnippetStore.getAllSnippets();
+    for (const snip of all) {
+      await SnippetStore.deleteSnippet(snip.id);
+    }
+    const emptySnippets = await SnippetStore.getAllSnippets();
+    expect(emptySnippets.length).toBe(0);
+
+    // Simulate refreshing / re-initializing the extension
+    await SnippetStore.init();
+    const afterRefresh = await SnippetStore.getAllSnippets();
+    expect(afterRefresh.length).toBe(0);
+  });
+
   it('saves and retrieves a new snippet', async () => {
     await SnippetStore.init();
     const newSnip: Snippet = {

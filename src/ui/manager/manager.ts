@@ -92,7 +92,7 @@ class ManagerWorkspace {
     } else if (this.snippets.length > 0) {
       this.selectSnippet(this.snippets[0].id);
     } else {
-      this.createNewSnippet();
+      this.showEmptyState();
     }
 
     // Auto-launch tour for first-time users
@@ -763,7 +763,12 @@ class ManagerWorkspace {
     if (this.snippets.length > 0) {
       this.selectSnippet(this.snippets[0].id);
     } else {
-      this.createNewSnippet();
+      this.showEmptyState();
+    }
+
+    // Broadcast update to content scripts and background
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
     }
 
     this.showUndoToast();
@@ -1223,6 +1228,16 @@ class ManagerWorkspace {
     if (editor) editor.style.display = 'flex';
     if (settings) settings.style.display = 'none';
     if (empty) empty.style.display = 'none';
+  }
+
+  private showEmptyState(): void {
+    const editor = document.getElementById('editor-view');
+    const settings = document.getElementById('settings-view');
+    const empty = document.getElementById('workspace-empty-state');
+    if (editor) editor.style.display = 'none';
+    if (settings) settings.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    this.selectedSnippetId = null;
   }
 
   private showSettingsView(): void {

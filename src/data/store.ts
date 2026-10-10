@@ -10,6 +10,7 @@ import { DEFAULT_SETTINGS, INITIAL_SNIPPETS } from './schema';
 const STORAGE_KEY_SNIPPETS = 'verbatim_snippets_v1';
 const STORAGE_KEY_SETTINGS = 'verbatim_settings_v1';
 const STORAGE_KEY_INDEX = 'verbatim_trigger_index_v1';
+const STORAGE_KEY_INITIALIZED = 'verbatim_initialized_v1';
 
 export class SnippetStore {
   /**
@@ -43,27 +44,37 @@ export class SnippetStore {
   }
 
   /**
-   * Initializes store on first boot if empty.
+   * Initializes store on first boot if never initialized before.
    */
   public static async init(): Promise<void> {
-    const existing = await this.getRaw<Snippet[]>(STORAGE_KEY_SNIPPETS);
-    if (!existing || existing.length === 0) {
+    const isInitialized = await this.getRaw<boolean>(STORAGE_KEY_INITIALIZED);
+    if (isInitialized) {
+      return;
+    }
+
+    const existingSnippets = await this.getRaw<Snippet[]>(STORAGE_KEY_SNIPPETS);
+    const existingSettings = await this.getRaw<Settings>(STORAGE_KEY_SETTINGS);
+
+    // Only seed on true fresh installation (neither snippets nor settings exist)
+    if (existingSnippets === null && existingSettings === null) {
       await this.setRaw(STORAGE_KEY_SNIPPETS, INITIAL_SNIPPETS);
       await this.setRaw(STORAGE_KEY_SETTINGS, DEFAULT_SETTINGS);
       await this.rebuildIndex(INITIAL_SNIPPETS);
     }
+
+    await this.setRaw(STORAGE_KEY_INITIALIZED, true);
   }
 
   /**
    * Retrieves all snippets.
    */
   public static async getAllSnippets(): Promise<Snippet[]> {
-    const data = await this.getRaw<Snippet[]>(STORAGE_KEY_SNIPPETS);
-    if (!data) {
+    const isInitialized = await this.getRaw<boolean>(STORAGE_KEY_INITIALIZED);
+    if (!isInitialized) {
       await this.init();
-      return (await this.getRaw<Snippet[]>(STORAGE_KEY_SNIPPETS)) || [];
     }
-    return data;
+    const data = await this.getRaw<Snippet[]>(STORAGE_KEY_SNIPPETS);
+    return data || [];
   }
 
   /**
