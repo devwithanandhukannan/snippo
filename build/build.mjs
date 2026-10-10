@@ -105,8 +105,8 @@ async function runBuild() {
     }
   };
 
-  if (fs.existsSync(resolve(rootDir, 'assets'))) {
-    copyDir(resolve(rootDir, 'assets'), resolve(distDir, 'assets'));
+  if (fs.existsSync(resolve(rootDir, 'assets/icons'))) {
+    copyDir(resolve(rootDir, 'assets/icons'), resolve(distDir, 'assets/icons'));
   }
 
   // 6. Mirror compiled files to project root so loading either the root directory
