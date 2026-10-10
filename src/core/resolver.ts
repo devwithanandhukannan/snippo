@@ -65,6 +65,9 @@ export class TemplateResolver {
         case 'year':
           return now.getFullYear().toString();
 
+        case 'month':
+          return now.toLocaleDateString(undefined, { month: 'long' });
+
         case 'clipboard':
           return context.clipboardText ?? '';
 
@@ -103,29 +106,39 @@ export class TemplateResolver {
         preview: now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
       },
       {
+        tag: '{date:short}',
+        label: 'Short Date',
+        preview: now.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }),
+      },
+      {
+        tag: '{date:iso}',
+        label: 'ISO Date',
+        preview: now.toISOString().split('T')[0],
+      },
+      {
         tag: '{time}',
         label: 'Time',
         preview: now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
       },
       {
-        tag: '{cursor}',
-        label: 'Cursor Position',
-        preview: 'Caret stops here',
-      },
-      {
-        tag: '{clipboard}',
-        label: 'Clipboard',
-        preview: 'Paste clipboard',
+        tag: '{time:24}',
+        label: '24h Time',
+        preview: now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }),
       },
       {
         tag: '{day}',
-        label: 'Day of Week',
+        label: 'Day',
         preview: now.toLocaleDateString(undefined, { weekday: 'long' }),
       },
       {
-        tag: '{date:short}',
-        label: 'Short Date',
-        preview: now.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }),
+        tag: '{month}',
+        label: 'Month',
+        preview: now.toLocaleDateString(undefined, { month: 'long' }),
+      },
+      {
+        tag: '{year}',
+        label: 'Year',
+        preview: now.getFullYear().toString(),
       },
     ];
   }

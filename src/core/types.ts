@@ -3,7 +3,17 @@
  * Zero external dependencies.
  */
 
-export type VariableType = 'date' | 'date:short' | 'time' | 'day' | 'year' | 'clipboard' | 'cursor';
+export type VariableType =
+  | 'date'
+  | 'date:short'
+  | 'date:iso'
+  | 'time'
+  | 'time:24'
+  | 'day'
+  | 'month'
+  | 'year'
+  | 'clipboard'
+  | 'cursor';
 
 export interface Snippet {
   id: string;
@@ -26,6 +36,7 @@ export interface Settings {
   soundOnExpand: boolean;
   excludedDomains: string[];
   theme: 'system' | 'light' | 'dark';
+  confirmOnDelete?: boolean;
   schemaVersion: number;
 }
 

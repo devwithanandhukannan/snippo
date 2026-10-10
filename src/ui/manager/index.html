@@ -279,7 +279,7 @@
           <div class="variables-toolbar" id="variables-toolbar"></div>
 
           <div class="soft-card-textarea">
-            <textarea id="detail-body-textarea" class="field-textarea" rows="4" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
+            <textarea id="detail-body-textarea" class="field-textarea" rows="4" placeholder="Type text here... Use {date}, {time}, {day}, {year}, or {date:iso}"></textarea>
           </div>
 
           <!-- Live Output Preview: Shows resolved output in real-time -->
@@ -347,6 +347,16 @@
                   <option value="immediate">Immediate (expands right when typed)</option>
                   <option value="space">After Spacebar (expands when pressing space)</option>
                 </select>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-text">
+                  <label class="field-label" for="setting-confirm-delete">Confirm on Delete</label>
+                  <p class="text-xs text-muted">Show a confirmation prompt every time you delete a snippet</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-confirm-delete" checked>
+                  <span class="slider"></span>
+                </label>
               </div>
             </div>
 
@@ -519,6 +529,26 @@
           <button class="btn btn-primary btn-sm" id="btn-tour-next">Next</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Interactive Delete Confirmation Toast (Prompts every time unless disabled in Settings) -->
+  <div class="toast-delete-confirm" id="toast-delete-confirm">
+    <div class="toast-delete-content">
+      <div class="toast-delete-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </div>
+      <div class="toast-delete-info">
+        <div class="toast-delete-title">Delete this snippet?</div>
+        <div class="toast-delete-msg" id="toast-delete-msg">Trigger shortcut will be removed.</div>
+      </div>
+    </div>
+    <div class="toast-delete-actions">
+      <button type="button" class="btn btn-ghost btn-xs toast-btn-cancel" id="btn-cancel-delete">Cancel</button>
+      <button type="button" class="btn btn-danger btn-xs toast-btn-delete" id="btn-confirm-delete">Delete</button>
     </div>
   </div>
 

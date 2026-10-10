@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   soundOnExpand: false,
   excludedDomains: ['bankofamerica.com', 'chase.com', 'wellsfargo.com'],
   theme: 'system',
+  confirmOnDelete: true,
   schemaVersion: CURRENT_SCHEMA_VERSION,
 };
 

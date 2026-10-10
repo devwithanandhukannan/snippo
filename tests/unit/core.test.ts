@@ -44,10 +44,22 @@ describe('TriggerMatcher', () => {
 });
 
 describe('TemplateResolver', () => {
-  it('resolves date and time correctly', () => {
+  it('resolves date, month, and time correctly', () => {
     const fixedDate = new Date('2026-10-10T12:30:00');
-    const res = TemplateResolver.resolve('Today is {date:iso} and year {year}', { now: fixedDate });
-    expect(res.text).toBe('Today is 2026-10-10 and year 2026');
+    const res = TemplateResolver.resolve('Today is {date:iso}, month {month}, and year {year}', { now: fixedDate });
+    expect(res.text).toBe('Today is 2026-10-10, month October, and year 2026');
+  });
+
+  it('exposes recommended reliable tags excluding cursor and clipboard', () => {
+    const vars = TemplateResolver.getAvailableVariables();
+    const tags = vars.map((v) => v.tag);
+    expect(tags).not.toContain('{cursor}');
+    expect(tags).not.toContain('{clipboard}');
+    expect(tags).toContain('{date}');
+    expect(tags).toContain('{date:iso}');
+    expect(tags).toContain('{month}');
+    expect(tags).toContain('{year}');
+    expect(tags).toContain('{day}');
   });
 
   it('handles {cursor} position correctly', () => {

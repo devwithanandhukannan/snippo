@@ -38,25 +38,25 @@ class ManagerWorkspace {
   private tourSteps: TourStep[] = [
     {
       targetId: 'btn-sidebar-new',
-      icon: '✨',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
       title: 'Create & Manage Snippets',
       description: 'Tap "+ New" right here to add text expansions, or browse and search shortcuts in your library.',
     },
     {
       targetId: 'detail-trigger-input',
-      icon: '⚡',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
       title: 'Custom Trigger Shortcut',
       description: 'Set your trigger keyword (e.g. /omw). Snippo listens for this keyword and expands it across any website.',
     },
     {
       targetId: 'variables-toolbar',
-      icon: '🏷️',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,
       title: 'Dynamic Variables Toolbar',
-      description: 'Click smart tags like +{date}, +{time}, or +{cursor} to inject dynamic timestamps and position your cursor.',
+      description: 'Click smart tags like +{date}, +{time}, +{day}, or +{year} to inject dynamic timestamps and formatting.',
     },
     {
       targetId: 'btn-open-test-modal',
-      icon: '🚀',
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
       title: 'Interactive Test Studio',
       description: 'Click "Test Snippet" right here to pop open the test studio and practice typing your shortcut in real time!',
     },
@@ -536,7 +536,16 @@ class ManagerWorkspace {
 
     // Delete snippet button (Explicit trash icon)
     document.getElementById('btn-delete-snippet')?.addEventListener('click', () => {
-      this.deleteCurrentSnippet();
+      this.requestDeleteCurrentSnippet();
+    });
+
+    // Delete confirmation prompt actions
+    document.getElementById('btn-cancel-delete')?.addEventListener('click', () => {
+      this.hideDeleteConfirmationToast();
+    });
+
+    document.getElementById('btn-confirm-delete')?.addEventListener('click', () => {
+      this.executeDeleteSnippet();
     });
 
     // Undo toast button
@@ -712,9 +721,38 @@ class ManagerWorkspace {
     }, 2400);
   }
 
-  // --- Delete & Loss Aversion Undo Toast ---
+  // --- Delete Confirmation & Loss Aversion Undo Toast ---
 
-  private async deleteCurrentSnippet(): Promise<void> {
+  private requestDeleteCurrentSnippet(): void {
+    if (!this.selectedSnippetId) return;
+    const toDelete = this.snippets.find((s) => s.id === this.selectedSnippetId);
+    if (!toDelete) return;
+
+    if (this.settings.confirmOnDelete !== false) {
+      this.showDeleteConfirmationToast(toDelete);
+    } else {
+      this.executeDeleteSnippet();
+    }
+  }
+
+  private showDeleteConfirmationToast(snippet: Snippet): void {
+    const toast = document.getElementById('toast-delete-confirm');
+    const msg = document.getElementById('toast-delete-msg');
+    if (!toast) return;
+
+    if (msg) {
+      msg.textContent = `"${snippet.trigger}" shortcut will be permanently removed.`;
+    }
+    toast.classList.add('visible');
+  }
+
+  private hideDeleteConfirmationToast(): void {
+    const toast = document.getElementById('toast-delete-confirm');
+    toast?.classList.remove('visible');
+  }
+
+  private async executeDeleteSnippet(): Promise<void> {
+    this.hideDeleteConfirmationToast();
     if (!this.selectedSnippetId) return;
 
     const toDelete = this.snippets.find((s) => s.id === this.selectedSnippetId);
@@ -978,7 +1016,7 @@ class ManagerWorkspace {
     const dots = document.querySelectorAll('.tour-dot');
 
     if (numEl) numEl.textContent = String(this.currentTourStep + 1);
-    if (iconEl) iconEl.textContent = step.icon || '✨';
+    if (iconEl) iconEl.innerHTML = step.icon || '';
     if (titleEl) titleEl.textContent = step.title;
     if (descEl) descEl.textContent = step.description;
 
@@ -1164,6 +1202,16 @@ class ManagerWorkspace {
       modeSelect.addEventListener('change', async () => {
         this.settings = await SnippetStore.updateSettings({
           expandOn: modeSelect.value as any,
+        });
+      });
+    }
+
+    const confirmDeleteCheck = document.getElementById('setting-confirm-delete') as HTMLInputElement;
+    if (confirmDeleteCheck) {
+      confirmDeleteCheck.checked = this.settings.confirmOnDelete !== false;
+      confirmDeleteCheck.addEventListener('change', async () => {
+        this.settings = await SnippetStore.updateSettings({
+          confirmOnDelete: confirmDeleteCheck.checked,
         });
       });
     }
