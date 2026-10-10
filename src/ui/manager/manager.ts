@@ -21,12 +21,14 @@ class ManagerWorkspace {
   private undoSecondsRemaining = 8;
   private testMatcher = new TriggerMatcher();
   private customFolders = new Set<string>();
+  private isSidebarCollapsed = false;
 
   public async init(): Promise<void> {
     await SnippetStore.init();
     this.settings = await SnippetStore.getSettings();
     this.snippets = await SnippetStore.getAllSnippets();
     this.loadCustomFolders();
+    this.applyTheme(this.settings.theme || 'system');
 
     this.renderVariablesToolbar();
     this.setupEventListeners();
@@ -34,6 +36,14 @@ class ManagerWorkspace {
     this.renderFolders();
     this.renderSnippetList();
     this.renderSettings();
+
+    // Restore sidebar collapsed preference on desktop
+    try {
+      const saved = localStorage.getItem('verbatim_sidebar_collapsed');
+      if (saved === '1' && window.innerWidth > 768) {
+        this.toggleSidebar(true);
+      }
+    } catch (e) {}
 
     // Check URL hash for target snippet
     const hash = window.location.hash.replace('#', '');
@@ -49,6 +59,33 @@ class ManagerWorkspace {
     } else {
       this.createNewSnippet();
     }
+  }
+
+  // --- Theme Controller ---
+
+  public applyTheme(theme: string): void {
+    if (theme === 'system' || !theme) {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
+  // --- Sidebar Collapse & Expand ---
+
+  public toggleSidebar(force?: boolean): void {
+    this.isSidebarCollapsed = force !== undefined ? force : !this.isSidebarCollapsed;
+    const sidebar = document.querySelector('.workspace-sidebar');
+    const layout = document.querySelector('.workspace-layout');
+    const expandBtn = document.getElementById('btn-sidebar-expand');
+
+    if (sidebar) sidebar.classList.toggle('collapsed', this.isSidebarCollapsed);
+    if (layout) layout.classList.toggle('sidebar-collapsed', this.isSidebarCollapsed);
+    if (expandBtn) expandBtn.style.display = this.isSidebarCollapsed ? 'flex' : 'none';
+
+    try {
+      localStorage.setItem('verbatim_sidebar_collapsed', this.isSidebarCollapsed ? '1' : '0');
+    } catch (e) {}
   }
 
   // --- Category / Folder Management ---
@@ -267,6 +304,10 @@ class ManagerWorkspace {
     this.selectedSnippetId = id;
     this.showEditorView();
 
+    if (window.innerWidth <= 768) {
+      document.querySelector('.workspace-layout')?.classList.add('mobile-editing');
+    }
+
     const snippet = this.snippets.find((s) => s.id === id);
     if (!snippet) return;
 
@@ -337,6 +378,10 @@ class ManagerWorkspace {
     this.renderFolders();
     this.renderSnippetList();
     this.selectSnippet(newId);
+
+    if (window.innerWidth <= 768) {
+      document.querySelector('.workspace-layout')?.classList.add('mobile-editing');
+    }
 
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
     triggerInput?.focus();
@@ -446,6 +491,20 @@ class ManagerWorkspace {
     // Add Category button
     document.getElementById('btn-add-category')?.addEventListener('click', () => {
       this.promptAddCategory();
+    });
+
+    // Sidebar Collapse and Expand Buttons
+    document.getElementById('btn-sidebar-toggle')?.addEventListener('click', () => {
+      this.toggleSidebar();
+    });
+
+    document.getElementById('btn-sidebar-expand')?.addEventListener('click', () => {
+      this.toggleSidebar(false);
+    });
+
+    // Mobile Back Button
+    document.getElementById('btn-mobile-back')?.addEventListener('click', () => {
+      document.querySelector('.workspace-layout')?.classList.remove('mobile-editing');
     });
 
     // Settings navigation
@@ -673,8 +732,20 @@ class ManagerWorkspace {
   // --- Settings Controller ---
 
   private renderSettings(): void {
+    const themeSelect = document.getElementById('setting-theme-select') as HTMLSelectElement;
     const prefixSelect = document.getElementById('setting-prefix-select') as HTMLSelectElement;
     const modeSelect = document.getElementById('setting-expand-mode') as HTMLSelectElement;
+
+    if (themeSelect) {
+      themeSelect.value = this.settings.theme || 'system';
+      themeSelect.addEventListener('change', async () => {
+        const chosenTheme = themeSelect.value as any;
+        this.settings = await SnippetStore.updateSettings({
+          theme: chosenTheme,
+        });
+        this.applyTheme(chosenTheme);
+      });
+    }
 
     if (prefixSelect) {
       prefixSelect.value = this.settings.triggerPrefix;
