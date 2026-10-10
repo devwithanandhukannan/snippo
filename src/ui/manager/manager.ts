@@ -1,6 +1,8 @@
 /**
- * Verbatim Manager Workspace Controller
- * Implements Fitts's Law, Hick's Law, Jakob's Law, Miller's Law, Loss Aversion, and Error Prevention.
+ * Snippo Manager Workspace Controller
+ * Apple minimalist design system implementation.
+ * Zero-borders, interactive test studio modal, live output preview,
+ * transient save toast notification, 2-column settings grid, and guided onboarding tour.
  */
 
 import { ConflictDetector } from '../../core/conflicts';
@@ -9,6 +11,12 @@ import { TemplateResolver } from '../../core/resolver';
 import { Settings, Snippet } from '../../core/types';
 import { BackupManager } from '../../data/import-export';
 import { SnippetStore } from '../../data/store';
+
+interface TourStep {
+  targetId?: string;
+  title: string;
+  description: string;
+}
 
 class ManagerWorkspace {
   private snippets: Snippet[] = [];
@@ -22,6 +30,32 @@ class ManagerWorkspace {
   private testMatcher = new TriggerMatcher();
   private customFolders = new Set<string>();
   private isSidebarCollapsed = false;
+  private saveToastTimer: any = null;
+
+  // Onboarding Tour state
+  private currentTourStep = 0;
+  private tourSteps: TourStep[] = [
+    {
+      targetId: 'sidebar-snippet-list',
+      title: 'Snippet Library',
+      description: 'Here is your shortcut library. Browse, search, or filter snippets into categories. Click + New anytime to add a shortcut.',
+    },
+    {
+      targetId: 'section-configuration',
+      title: 'Trigger Shortcut',
+      description: 'This is the shorthand code you type anywhere on the web (e.g. /omw) to trigger instant text expansion.',
+    },
+    {
+      targetId: 'section-expansion',
+      title: 'Expansion Content & Smart Tags',
+      description: 'Type your message and click tags like {date}, {time}, or {cursor} to dynamically personalize your snippets.',
+    },
+    {
+      targetId: 'output-preview-container',
+      title: 'Live Preview & Test Studio',
+      description: 'Check how your expanded text will look below in real-time, or click "Test Snippet" to test expansion inside an interactive modal!',
+    },
+  ];
 
   public async init(): Promise<void> {
     await SnippetStore.init();
@@ -32,14 +66,15 @@ class ManagerWorkspace {
 
     this.renderVariablesToolbar();
     this.setupEventListeners();
-    this.setupLivePractice();
+    this.setupTestModal();
+    this.setupOnboardingTour();
     this.renderFolders();
     this.renderSnippetList();
     this.renderSettings();
 
     // Restore sidebar collapsed preference on desktop
     try {
-      const saved = localStorage.getItem('verbatim_sidebar_collapsed');
+      const saved = localStorage.getItem('snippo_sidebar_collapsed');
       if (saved === '1' && window.innerWidth > 768) {
         this.toggleSidebar(true);
       }
@@ -59,6 +94,14 @@ class ManagerWorkspace {
     } else {
       this.createNewSnippet();
     }
+
+    // Auto-launch tour for first-time users
+    try {
+      const tourSeen = localStorage.getItem('snippo_tour_seen');
+      if (!tourSeen) {
+        setTimeout(() => this.startTour(), 500);
+      }
+    } catch (e) {}
   }
 
   // --- Theme Controller ---
@@ -84,7 +127,7 @@ class ManagerWorkspace {
     if (expandBtn) expandBtn.style.display = this.isSidebarCollapsed ? 'flex' : 'none';
 
     try {
-      localStorage.setItem('verbatim_sidebar_collapsed', this.isSidebarCollapsed ? '1' : '0');
+      localStorage.setItem('snippo_sidebar_collapsed', this.isSidebarCollapsed ? '1' : '0');
     } catch (e) {}
   }
 
@@ -92,7 +135,7 @@ class ManagerWorkspace {
 
   private loadCustomFolders(): void {
     try {
-      const raw = localStorage.getItem('verbatim_custom_folders');
+      const raw = localStorage.getItem('snippo_custom_folders');
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr)) {
@@ -105,7 +148,7 @@ class ManagerWorkspace {
   private saveCustomFolders(): void {
     try {
       localStorage.setItem(
-        'verbatim_custom_folders',
+        'snippo_custom_folders',
         JSON.stringify(Array.from(this.customFolders))
       );
     } catch (e) {}
@@ -155,7 +198,7 @@ class ManagerWorkspace {
 
     // Discover unique folders
     const folderSet = new Set<string>();
-    ['General', 'Personal', 'Work', 'Fun'].forEach((f) => folderSet.add(f));
+    ['General', 'Personal', 'Work'].forEach((f) => folderSet.add(f));
     this.customFolders.forEach((f) => folderSet.add(f));
     this.snippets.forEach((s) => {
       if (s.folder) folderSet.add(s.folder);
@@ -204,7 +247,7 @@ class ManagerWorkspace {
       }
     }
 
-    // Update folder datalist for input autocompletion
+    // Update folder datalist
     const datalist = document.getElementById('folder-datalist');
     if (datalist) {
       datalist.innerHTML = '';
@@ -354,6 +397,7 @@ class ManagerWorkspace {
     if (bodyTextarea) bodyTextarea.value = snippet.body || '';
 
     this.checkTriggerConflict();
+    this.updateOutputPreview();
     this.updateLiveTestMatcher();
     window.location.hash = snippet.id;
   }
@@ -386,6 +430,23 @@ class ManagerWorkspace {
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
     triggerInput?.focus();
     triggerInput?.select();
+  }
+
+  // --- Live Output Preview ---
+
+  private updateOutputPreview(): void {
+    const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+    const previewBox = document.getElementById('output-preview-box');
+    if (!bodyTextarea || !previewBox) return;
+
+    const val = bodyTextarea.value;
+    if (!val || !val.trim()) {
+      previewBox.innerHTML = '<span class="output-preview-placeholder">Live preview will appear as you type...</span>';
+      return;
+    }
+
+    const resolved = TemplateResolver.resolve(val);
+    previewBox.textContent = resolved.text;
   }
 
   // --- Conflict Detection (Error Prevention) ---
@@ -427,6 +488,8 @@ class ManagerWorkspace {
     const newPos = start + tag.length;
     textarea.setSelectionRange(newPos, newPos);
     textarea.focus();
+
+    this.updateOutputPreview();
   }
 
   // --- Event Bindings ---
@@ -448,12 +511,17 @@ class ManagerWorkspace {
       this.renderSnippetList();
     });
 
-    // Save button
+    // Save snippet button
     document.getElementById('btn-save-snippet')?.addEventListener('click', () => {
       this.saveCurrentSnippet();
     });
 
-    // Delete button (Loss Aversion with 8s Undo Toast)
+    // Body textarea live preview listener
+    document.getElementById('detail-body-textarea')?.addEventListener('input', () => {
+      this.updateOutputPreview();
+    });
+
+    // Delete snippet button (Explicit trash icon)
     document.getElementById('btn-delete-snippet')?.addEventListener('click', () => {
       this.deleteCurrentSnippet();
     });
@@ -516,6 +584,16 @@ class ManagerWorkspace {
       this.showEditorView();
     });
 
+    // Replay tour buttons
+    document.getElementById('btn-sidebar-tour')?.addEventListener('click', () => {
+      this.startTour();
+    });
+
+    document.getElementById('btn-settings-replay-tour')?.addEventListener('click', () => {
+      this.showEditorView();
+      this.startTour();
+    });
+
     // Export backup
     document.getElementById('btn-export-backup')?.addEventListener('click', async () => {
       const data = await BackupManager.exportBackup();
@@ -524,7 +602,7 @@ class ManagerWorkspace {
 
     // Import backup
     const importInput = document.getElementById('input-import-file') as HTMLInputElement;
-    importInput?.addEventListener('change', async (e) => {
+    importInput?.addEventListener('change', async () => {
       const file = importInput.files?.[0];
       if (!file) return;
 
@@ -586,16 +664,8 @@ class ManagerWorkspace {
     this.renderSnippetList();
     this.selectSnippet(updated.id);
 
-    // Save confirmation feedback
-    const msg = document.getElementById('save-status-msg');
-    if (msg) {
-      msg.textContent = 'Saved successfully';
-      msg.style.color = 'var(--success-text)';
-      setTimeout(() => {
-        msg.textContent = 'All changes saved locally';
-        msg.style.color = 'var(--text-tertiary)';
-      }, 2500);
-    }
+    // Show Transient Save Toast Notification
+    this.showSaveToast('Snippet saved successfully');
 
     // Broadcast update to content scripts
     if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
@@ -603,7 +673,25 @@ class ManagerWorkspace {
     }
   }
 
-  // --- Loss Aversion: 8-second Undo Toast ---
+  private showSaveToast(text: string): void {
+    const toast = document.getElementById('toast-save-notification');
+    const toastText = document.getElementById('toast-save-text');
+    if (!toast) return;
+
+    if (toastText) toastText.textContent = text;
+    toast.classList.add('visible');
+
+    if (this.saveToastTimer) {
+      clearTimeout(this.saveToastTimer);
+    }
+
+    this.saveToastTimer = setTimeout(() => {
+      toast.classList.remove('visible');
+      this.saveToastTimer = null;
+    }, 2400);
+  }
+
+  // --- Delete & Loss Aversion Undo Toast ---
 
   private async deleteCurrentSnippet(): Promise<void> {
     if (!this.selectedSnippetId) return;
@@ -611,7 +699,6 @@ class ManagerWorkspace {
     const toDelete = this.snippets.find((s) => s.id === this.selectedSnippetId);
     if (!toDelete) return;
 
-    // Remove from in-memory and storage
     await SnippetStore.deleteSnippet(toDelete.id);
     this.deletedSnippetStack.push(toDelete);
     this.snippets = await SnippetStore.getAllSnippets();
@@ -672,31 +759,138 @@ class ManagerWorkspace {
     this.selectSnippet(restored.id);
   }
 
-  // --- Live Practice Field ---
+  // --- Interactive Test Modal ---
 
-  private setupLivePractice(): void {
-    const input = document.getElementById('live-test-field') as HTMLInputElement;
-    if (!input) return;
+  private setupTestModal(): void {
+    const openBtn = document.getElementById('btn-open-test-modal');
+    const closeBtn = document.getElementById('btn-close-test-modal');
+    const doneBtn = document.getElementById('btn-modal-done');
+    const clearBtn = document.getElementById('btn-modal-clear-input');
+    const modalEl = document.getElementById('test-snippet-modal');
+    const modalInput = document.getElementById('modal-test-input') as HTMLTextAreaElement;
 
-    this.updateLiveTestMatcher();
+    openBtn?.addEventListener('click', () => {
+      this.openTestModal();
+    });
 
-    input.addEventListener('input', () => {
-      const val = input.value;
-      const match = this.testMatcher.matchTail(val);
-      if (match) {
-        const snippet = this.snippets.find((s) => s.id === match.snippetId);
-        if (snippet) {
-          const resolved = TemplateResolver.resolve(snippet.body);
-          const start = val.length - match.tailLength;
-          input.value = val.slice(0, start) + resolved.text;
-          const cursorPos =
-            resolved.cursorOffset !== undefined
-              ? start + resolved.cursorOffset
-              : input.value.length;
-          input.setSelectionRange(cursorPos, cursorPos);
-        }
+    closeBtn?.addEventListener('click', () => {
+      this.closeTestModal();
+    });
+
+    doneBtn?.addEventListener('click', () => {
+      this.closeTestModal();
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      if (modalInput) {
+        modalInput.value = '';
+        modalInput.focus();
+        this.resetModalPreview();
       }
     });
+
+    modalEl?.addEventListener('click', (e) => {
+      if (e.target === modalEl) {
+        this.closeTestModal();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalEl && modalEl.style.display !== 'none') {
+        this.closeTestModal();
+      }
+    });
+
+    // Real-time expansion testing inside modal textarea
+    modalInput?.addEventListener('input', () => {
+      this.handleModalTestInput();
+    });
+  }
+
+  private openTestModal(): void {
+    const modalEl = document.getElementById('test-snippet-modal');
+    const targetTag = document.getElementById('modal-target-trigger');
+    const modalInput = document.getElementById('modal-test-input') as HTMLTextAreaElement;
+    if (!modalEl) return;
+
+    const currentSnippet = this.snippets.find((s) => s.id === this.selectedSnippetId);
+    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const prefix = this.settings.triggerPrefix || '';
+    const activeTrigger = currentSnippet ? currentSnippet.trigger : (prefix + (triggerInput?.value || 'omw'));
+
+    if (targetTag) {
+      targetTag.textContent = activeTrigger;
+    }
+
+    if (modalInput) {
+      modalInput.value = '';
+    }
+
+    this.resetModalPreview();
+    modalEl.style.display = 'flex';
+    setTimeout(() => modalInput?.focus(), 50);
+  }
+
+  private closeTestModal(): void {
+    const modalEl = document.getElementById('test-snippet-modal');
+    if (modalEl) modalEl.style.display = 'none';
+  }
+
+  private resetModalPreview(): void {
+    const statusEl = document.getElementById('modal-preview-status');
+    const contentEl = document.getElementById('modal-preview-content');
+    if (statusEl) {
+      statusEl.textContent = 'Awaiting trigger input...';
+      statusEl.style.color = 'var(--text-tertiary)';
+    }
+    if (contentEl) {
+      contentEl.textContent = 'Type the trigger shortcut in the box above to see instant expansion.';
+    }
+  }
+
+  private handleModalTestInput(): void {
+    const modalInput = document.getElementById('modal-test-input') as HTMLTextAreaElement;
+    const statusEl = document.getElementById('modal-preview-status');
+    const contentEl = document.getElementById('modal-preview-content');
+    if (!modalInput) return;
+
+    const val = modalInput.value;
+    const match = this.testMatcher.matchTail(val);
+
+    if (match) {
+      const snippet = this.snippets.find((s) => s.id === match.snippetId);
+      if (snippet) {
+        const resolved = TemplateResolver.resolve(snippet.body);
+        const start = val.length - match.tailLength;
+        modalInput.value = val.slice(0, start) + resolved.text;
+        const cursorPos =
+          resolved.cursorOffset !== undefined
+            ? start + resolved.cursorOffset
+            : modalInput.value.length;
+        modalInput.setSelectionRange(cursorPos, cursorPos);
+
+        if (statusEl) {
+          statusEl.textContent = `Expanded (${snippet.trigger})!`;
+          statusEl.style.color = 'var(--color-brand-green)';
+        }
+        if (contentEl) {
+          contentEl.textContent = resolved.text;
+        }
+      }
+    } else {
+      // If no tail match but user typed active trigger specifically
+      const currentSnippet = this.snippets.find((s) => s.id === this.selectedSnippetId);
+      if (currentSnippet && val.includes(currentSnippet.trigger)) {
+        const resolved = TemplateResolver.resolve(currentSnippet.body);
+        if (statusEl) {
+          statusEl.textContent = `Trigger detected: ${currentSnippet.trigger}`;
+          statusEl.style.color = 'var(--color-brand-violet)';
+        }
+        if (contentEl) {
+          contentEl.textContent = resolved.text;
+        }
+      }
+    }
   }
 
   private updateLiveTestMatcher(): void {
@@ -707,6 +901,92 @@ class ManagerWorkspace {
       }
     });
     this.testMatcher.updateIndex(index);
+  }
+
+  // --- First-time Guided Onboarding Tour ---
+
+  private setupOnboardingTour(): void {
+    const overlay = document.getElementById('tour-overlay');
+    const nextBtn = document.getElementById('btn-tour-next');
+    const prevBtn = document.getElementById('btn-tour-prev');
+    const skipBtn = document.getElementById('btn-tour-skip');
+
+    nextBtn?.addEventListener('click', () => {
+      this.nextTourStep();
+    });
+
+    prevBtn?.addEventListener('click', () => {
+      this.prevTourStep();
+    });
+
+    skipBtn?.addEventListener('click', () => {
+      this.endTour();
+    });
+
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        this.endTour();
+      }
+    });
+  }
+
+  public startTour(): void {
+    this.currentTourStep = 0;
+    const overlay = document.getElementById('tour-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    this.renderTourStep();
+  }
+
+  private renderTourStep(): void {
+    const step = this.tourSteps[this.currentTourStep];
+    if (!step) return;
+
+    const numEl = document.getElementById('tour-step-num');
+    const titleEl = document.getElementById('tour-title');
+    const descEl = document.getElementById('tour-desc');
+    const prevBtn = document.getElementById('btn-tour-prev');
+    const nextBtn = document.getElementById('btn-tour-next');
+    const dots = document.querySelectorAll('.tour-dot');
+
+    if (numEl) numEl.textContent = String(this.currentTourStep + 1);
+    if (titleEl) titleEl.textContent = step.title;
+    if (descEl) descEl.textContent = step.description;
+
+    if (prevBtn) {
+      prevBtn.style.display = this.currentTourStep > 0 ? 'inline-flex' : 'none';
+    }
+
+    if (nextBtn) {
+      nextBtn.textContent = this.currentTourStep === this.tourSteps.length - 1 ? 'Get Started' : 'Next';
+    }
+
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === this.currentTourStep);
+    });
+  }
+
+  private nextTourStep(): void {
+    if (this.currentTourStep < this.tourSteps.length - 1) {
+      this.currentTourStep++;
+      this.renderTourStep();
+    } else {
+      this.endTour();
+    }
+  }
+
+  private prevTourStep(): void {
+    if (this.currentTourStep > 0) {
+      this.currentTourStep--;
+      this.renderTourStep();
+    }
+  }
+
+  private endTour(): void {
+    const overlay = document.getElementById('tour-overlay');
+    if (overlay) overlay.style.display = 'none';
+    try {
+      localStorage.setItem('snippo_tour_seen', '1');
+    } catch (e) {}
   }
 
   // --- Views Switching ---

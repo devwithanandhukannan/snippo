@@ -71,20 +71,29 @@
         <!-- Dynamically filled list -->
       </div>
 
-      <!-- Sidebar Footer: Settings & Stats -->
+      <!-- Sidebar Footer: Settings, Tour & Stats -->
       <div class="sidebar-footer">
-        <button class="btn btn-ghost btn-sm" id="btn-tab-settings">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-          Settings & Backup
-        </button>
+        <div class="sidebar-footer-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-tab-settings" title="Settings & Preferences">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Settings
+          </button>
+          <button class="btn btn-ghost btn-sm" id="btn-sidebar-tour" title="Take a tour of Snippo">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="10 8 16 12 10 16 10 8"></polygon>
+            </svg>
+            Tour
+          </button>
+        </div>
         <span class="text-xs text-muted" id="total-stats-label">0 snippets</span>
       </div>
     </aside>
 
-    <!-- Detail Pane Right (Modern Apple / Image 2 Layout) -->
+    <!-- Detail Pane Right (Modern Apple / Seamless Studio Card Layout) -->
     <main class="workspace-main" id="workspace-main-pane">
       <!-- Floating Sidebar Expand Button (Shown when sidebar is collapsed) -->
       <button class="btn-sidebar-expand-float" id="btn-sidebar-expand" title="Show sidebar">
@@ -119,6 +128,22 @@
           </div>
 
           <div class="sheet-actions">
+            <!-- Test Snippet Modal Button -->
+            <button class="btn-action-pill btn-test-pill" id="btn-open-test-modal" title="Test snippet live in a modal">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Test Snippet</span>
+            </button>
+
+            <!-- Save Snippet Button -->
+            <button class="btn-action-pill btn-save-pill" id="btn-save-snippet" title="Save snippet">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Save</span>
+            </button>
+
             <label class="switch-with-label" title="Enable or disable snippet">
               <span class="text-xs text-muted">Active</span>
               <label class="switch">
@@ -127,17 +152,19 @@
               </label>
             </label>
 
-            <!-- Circular Close / Delete Button -->
-            <button class="btn-circle-action" id="btn-delete-snippet" title="Delete this snippet">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <!-- Explicit Delete Trash Button (Fixed UI Mistake: Clear Trash Can Icon) -->
+            <button class="btn-circle-action btn-delete-action" id="btn-delete-snippet" title="Delete this snippet">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </button>
           </div>
         </header>
 
-        <!-- Main Title & Metadata Badges (Like Image 2) -->
+        <!-- Main Title & Metadata Badges -->
         <div class="sheet-hero">
           <h1 class="sheet-hero-title" id="card-hero-title">/trigger</h1>
           <div class="sheet-hero-subtitle" id="card-hero-subtitle">GENERAL SNIPPET</div>
@@ -172,7 +199,7 @@
         </div>
 
         <!-- Section: Key Details (Cards side by side with zero borders) -->
-        <div class="sheet-section">
+        <div class="sheet-section" id="section-configuration">
           <div class="section-label">Configuration</div>
           
           <div class="cards-grid-2">
@@ -238,7 +265,7 @@
         </div>
 
         <!-- Section: Expansion Body -->
-        <div class="sheet-section">
+        <div class="sheet-section" id="section-expansion">
           <div class="section-label-row">
             <span class="section-label">Expansion Content</span>
             <span class="text-xs text-muted">Insert dynamic tags:</span>
@@ -248,132 +275,143 @@
           <div class="variables-toolbar" id="variables-toolbar"></div>
 
           <div class="soft-card-textarea">
-            <textarea id="detail-body-textarea" class="field-textarea" rows="5" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
+            <textarea id="detail-body-textarea" class="field-textarea" rows="4" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
           </div>
-        </div>
 
-        <!-- Section: Interactive Live Test Zone -->
-        <div class="sheet-section">
-          <div class="playground-card">
-            <div class="playground-header">
-              <span class="playground-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          <!-- Live Output Preview: Shows resolved output in real-time -->
+          <div class="output-preview-container" id="output-preview-container">
+            <div class="output-preview-header">
+              <span class="output-preview-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                Instant Playground
+                Output Preview
               </span>
-              <span class="text-xs text-muted">Test trigger live</span>
+              <span class="output-preview-sub">Variables resolved in real time</span>
             </div>
-            <input type="text" id="live-test-field" class="playground-input" placeholder="Type your trigger here to test expansion immediately...">
+            <div class="output-preview-box" id="output-preview-box">
+              <span class="output-preview-placeholder">Live preview will appear as you type...</span>
+            </div>
           </div>
         </div>
-
-        <!-- Bottom Action Banner (Like AsterCare / Add to Cart card in Image 2) -->
-        <footer class="sheet-action-card">
-          <div class="action-card-info">
-            <div class="action-card-status">
-              <span class="status-dot"></span>
-              <span id="save-status-msg">All changes saved locally</span>
-            </div>
-            <div class="action-card-note">Private on-device storage • 0 bytes synced</div>
-          </div>
-          <button class="btn-save-pill" id="btn-save-snippet">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            Save Snippet
-          </button>
-        </footer>
       </section>
 
-      <!-- Settings View Pane -->
+      <!-- Settings View Pane (2 Column Grid filling page) -->
       <section class="settings-view" id="settings-view" style="display: none;">
         <header class="settings-header">
-          <h2>Settings & Preferences</h2>
+          <div class="settings-header-titles">
+            <h2>Settings & Preferences</h2>
+            <p class="text-xs text-muted">Fine-tune triggers, themes, domains, and cloud-free storage.</p>
+          </div>
           <button class="btn btn-ghost btn-sm" id="btn-close-settings">← Back to Editor</button>
         </header>
 
-        <div class="settings-content">
-          <!-- Theme & Appearance -->
-          <div class="settings-card">
-            <h3>Appearance & Theme</h3>
-            <p class="text-sm text-muted">Choose between light, dark, or system matching appearance.</p>
-            <div class="settings-row">
-              <label class="field-label" for="setting-theme-select">Theme Mode</label>
-              <select id="setting-theme-select" class="field-select">
-                <option value="system">Auto (System Preference)</option>
-                <option value="dark">Dark Theme</option>
-                <option value="light">Light Theme</option>
-              </select>
+        <div class="settings-content settings-grid-2">
+          <!-- Column 1 -->
+          <div class="settings-col">
+            <!-- Theme & Appearance -->
+            <div class="settings-card">
+              <h3>Appearance & Theme</h3>
+              <p class="text-sm text-muted">Choose between light, dark, or system matching appearance.</p>
+              <div class="settings-row">
+                <label class="field-label" for="setting-theme-select">Theme Mode</label>
+                <select id="setting-theme-select" class="field-select">
+                  <option value="system">Auto (System Preference)</option>
+                  <option value="dark">Dark Theme</option>
+                  <option value="light">Light Theme</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div class="settings-card">
-            <h3>Trigger Configuration</h3>
-            <p class="text-sm text-muted">Choose your preferred shortcut prefix symbol for triggers.</p>
-            <div class="settings-row">
-              <label class="field-label">Prefix Symbol</label>
-              <select id="setting-prefix-select" class="field-select">
-                <option value="/">/ (Slash — e.g. /omw)</option>
-                <option value=";">; (Semicolon — e.g. ;omw)</option>
-                <option value="!">! (Exclamation — e.g. !omw)</option>
-                <option value="">None (Plain word match)</option>
-              </select>
+            <!-- Trigger Configuration -->
+            <div class="settings-card">
+              <h3>Trigger Configuration</h3>
+              <p class="text-sm text-muted">Choose your preferred shortcut prefix symbol for triggers.</p>
+              <div class="settings-row">
+                <label class="field-label">Prefix Symbol</label>
+                <select id="setting-prefix-select" class="field-select">
+                  <option value="/">/ (Slash — e.g. /omw)</option>
+                  <option value=";">; (Semicolon — e.g. ;omw)</option>
+                  <option value="!">! (Exclamation — e.g. !omw)</option>
+                  <option value="">None (Plain word match)</option>
+                </select>
+              </div>
+              <div class="settings-row">
+                <label class="field-label">Expansion Trigger</label>
+                <select id="setting-expand-mode" class="field-select">
+                  <option value="immediate">Immediate (expands right when typed)</option>
+                  <option value="space">After Spacebar (expands when pressing space)</option>
+                </select>
+              </div>
             </div>
-            <div class="settings-row">
-              <label class="field-label">Expansion Trigger</label>
-              <select id="setting-expand-mode" class="field-select">
-                <option value="immediate">Immediate (expands right when typed)</option>
-                <option value="space">After Spacebar (expands when pressing space)</option>
-              </select>
-            </div>
-          </div>
 
-          <div class="settings-card">
-            <h3>Site Exclusions (Paused Websites)</h3>
-            <p class="text-sm text-muted">Snippo will never listen or expand on these domains.</p>
-            <div class="exclusion-add-bar">
-              <input type="text" id="new-exclusion-input" class="field-input" placeholder="e.g. example.com">
-              <button class="btn btn-secondary btn-sm" id="btn-add-exclusion">Add Domain</button>
-            </div>
-            <div class="exclusion-list" id="exclusion-domains-list"></div>
-          </div>
-
-          <div class="settings-card">
-            <h3>Backup & Restore (JSON)</h3>
-            <p class="text-sm text-muted">Your data is stored 100% locally. Export backups or restore anytime.</p>
-            <div class="backup-actions">
-              <button class="btn btn-secondary" id="btn-export-backup">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
+            <!-- Privacy Callout -->
+            <div class="settings-card privacy-callout">
+              <h3 style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
-                Export Backup (JSON)
-              </button>
-              <label class="btn btn-secondary" style="cursor: pointer;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                Import Backup (JSON)
-                <input type="file" id="input-import-file" accept=".json" style="display: none;">
-              </label>
+                Zero-Cloud Privacy Guarantee
+              </h3>
+              <p class="text-sm">
+                Snippo runs 100% locally with zero cloud network requests, zero telemetry, and zero tracking. Your keystrokes and shortcuts never leave your computer.
+              </p>
             </div>
           </div>
 
-          <div class="settings-card privacy-callout">
-            <h3 style="display: flex; align-items: center; gap: 8px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-              Privacy Guarantee
-            </h3>
-            <p class="text-sm">
-              Snippo has zero network permissions, zero analytics, zero external API connections, and zero tracking.
-              Every keystroke and snippet is strictly contained within your browser storage.
-            </p>
+          <!-- Column 2 -->
+          <div class="settings-col">
+            <!-- Site Exclusions -->
+            <div class="settings-card">
+              <h3>Site Exclusions (Paused Websites)</h3>
+              <p class="text-sm text-muted">Snippo will never listen or expand on these domains.</p>
+              <div class="exclusion-add-bar">
+                <input type="text" id="new-exclusion-input" class="field-input" placeholder="e.g. example.com">
+                <button class="btn btn-secondary btn-sm" id="btn-add-exclusion">Add Domain</button>
+              </div>
+              <div class="exclusion-list" id="exclusion-domains-list"></div>
+            </div>
+
+            <!-- Backup & Restore -->
+            <div class="settings-card">
+              <h3>Backup & Restore (JSON)</h3>
+              <p class="text-sm text-muted">Your data is stored 100% locally. Export backups or restore anytime.</p>
+              <div class="backup-actions">
+                <button class="btn btn-secondary" id="btn-export-backup">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Export Backup
+                </button>
+                <label class="btn btn-secondary" style="cursor: pointer;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  Import Backup
+                  <input type="file" id="input-import-file" accept=".json" style="display: none;">
+                </label>
+              </div>
+            </div>
+
+            <!-- Guided Tour Launcher -->
+            <div class="settings-card">
+              <h3>Onboarding & Guided Tour</h3>
+              <p class="text-sm text-muted">Need a quick walkthrough of how Snippo works? Replay the 4-step tour anytime.</p>
+              <div>
+                <button class="btn btn-secondary btn-sm" id="btn-settings-replay-tour">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                  </svg>
+                  Replay Product Tour
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -396,17 +434,101 @@
             </svg>
           </div>
           <h2>Select or Create a Snippet</h2>
-          <p class="text-muted">Choose a snippet from the sidebar on the left or tap "+ New Snippet" to create one.</p>
+          <p class="text-muted">Choose a snippet from the sidebar on the left or tap "+ New" to create one.</p>
           <button class="btn btn-primary" id="btn-empty-create">Create New Snippet</button>
         </div>
       </div>
     </main>
   </div>
 
+  <!-- Interactive Test Snippet Modal -->
+  <div class="modal-backdrop" id="test-snippet-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3 class="modal-title">Interactive Test Studio</h3>
+          <p class="modal-subtitle">Test snippet shortcut expansion in real-time</p>
+        </div>
+        <button class="btn-circle-action modal-close-btn" id="btn-close-test-modal" title="Close test window">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-trigger-indicator">
+          <span class="indicator-label">Target Trigger:</span>
+          <span class="indicator-tag" id="modal-target-trigger">/omw</span>
+          <span class="indicator-help">Type this trigger inside the box below to test expansion:</span>
+        </div>
+
+        <div class="modal-test-input-card">
+          <textarea id="modal-test-input" class="modal-test-textarea" rows="3" placeholder="Type here... e.g. hello /omw test"></textarea>
+        </div>
+
+        <div class="modal-preview-box">
+          <div class="modal-preview-header">
+            <span class="modal-preview-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Expansion Result:
+            </span>
+            <span class="modal-preview-status" id="modal-preview-status">Ready to test</span>
+          </div>
+          <div class="modal-preview-content" id="modal-preview-content">
+            Type the trigger shortcut in the box above to see instant expansion.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" id="btn-modal-clear-input">Clear Input</button>
+        <button class="btn btn-primary btn-sm" id="btn-modal-done">Done Testing</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guided Product Tour Overlay for First-Time Users -->
+  <div class="tour-overlay" id="tour-overlay" style="display: none;">
+    <div class="tour-card" id="tour-card">
+      <div class="tour-card-header">
+        <div class="tour-badge">Product Tour • Step <span id="tour-step-num">1</span> of 4</div>
+        <button class="tour-close-btn" id="btn-tour-skip" title="Skip tour">✕</button>
+      </div>
+      <div class="tour-card-body">
+        <h3 class="tour-title" id="tour-title">Snippet Library</h3>
+        <p class="tour-desc" id="tour-desc">Here is your shortcut library. You can browse, search, and group your snippets into categories.</p>
+      </div>
+      <div class="tour-card-footer">
+        <div class="tour-dots" id="tour-dots">
+          <span class="tour-dot active"></span>
+          <span class="tour-dot"></span>
+          <span class="tour-dot"></span>
+          <span class="tour-dot"></span>
+        </div>
+        <div class="tour-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-tour-prev" style="display: none;">Back</button>
+          <button class="btn btn-primary btn-sm" id="btn-tour-next">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Loss Aversion Principle: 8-second Undo Toast -->
   <div class="toast-undo" id="delete-undo-toast">
     <span>Snippet deleted.</span>
     <button class="toast-undo-btn" id="btn-toast-undo">Undo (<span id="undo-countdown">8</span>s)</button>
+  </div>
+
+  <!-- Transient Apple-style Save Notification Toast -->
+  <div class="toast-save" id="toast-save-notification">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="toast-save-text">Snippet saved successfully</span>
   </div>
 
   <script type="module" src="manager.ts"></script>
