@@ -761,8 +761,13 @@ input:checked + .slider:before {
 .soft-card-textarea {
   background-color: var(--bg-surface-secondary);
   border-radius: 14px;
-  padding: 10px 14px;
+  padding: 16px 20px;
   border: none;
+  transition: all var(--dur-fast) ease;
+}
+
+.soft-card-textarea:focus-within {
+  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.35);
 }
 
 .soft-card-textarea .field-textarea {
@@ -770,12 +775,13 @@ input:checked + .slider:before {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
   color: var(--text-primary) !important;
   width: 100%;
-  min-height: 64px;
-  max-height: 130px;
+  min-height: 72px;
+  max-height: 160px;
+  outline: none !important;
 }
 
 /* ═══════════════════════════════════════ */
@@ -784,11 +790,11 @@ input:checked + .slider:before {
 .output-preview-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 6px;
   background-color: var(--bg-surface-secondary);
   border-radius: 14px;
-  padding: 10px 14px;
+  padding: 14px 20px;
   border: none;
 }
 
@@ -816,16 +822,16 @@ input:checked + .slider:before {
 
 .output-preview-box {
   min-height: 38px;
-  max-height: 110px;
+  max-height: 120px;
   overflow-y: auto;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
   background-color: var(--bg-surface-elevated);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 10px 16px;
 }
 
 .output-preview-placeholder {
@@ -930,7 +936,12 @@ input:checked + .slider:before {
 .modal-test-input-card {
   background-color: var(--bg-surface-secondary);
   border-radius: 14px;
-  padding: 10px 14px;
+  padding: 16px 20px;
+  transition: all var(--dur-fast) ease;
+}
+
+.modal-test-input-card:focus-within {
+  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.35);
 }
 
 .modal-test-textarea {
@@ -938,11 +949,11 @@ input:checked + .slider:before {
   background: transparent;
   border: none;
   outline: none;
-  font-size: 13px;
+  font-size: 13.5px;
   font-family: inherit;
   color: var(--text-primary);
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .modal-preview-box {
