@@ -1,7 +1,7 @@
 /**
  * Snippo Design System: Tokens
- * Apple-inspired minimalist system with pure white/grey/black palette.
- * Supports both light and dark themes via system preference and explicit toggle.
+ * Apple-inspired minimalist system with rich obsidian/charcoal dark mode
+ * and crisp porcelain light mode. Premium MetaMask-grade elevated depth.
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -32,12 +32,12 @@
   --space-16: 64px;
 
   /* Corner Radii */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 30px;
   --radius-full: 9999px;
 
   /* Animation Easing & Timings */
@@ -49,14 +49,7 @@
   --dur-slow: 320ms;
   --dur-spring: 500ms;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 20px 48px -8px rgba(0, 0, 0, 0.12);
-
-  /* Brand Colors (always available) */
+  /* Brand Accents */
   --color-brand-violet: #6D63E6;
   --color-brand-violet-dark: #5B5BD6;
   --color-brand-green: #3DDC97;
@@ -68,25 +61,31 @@
 :root, [data-theme="light"] {
   --color-accent: #1D1D1F;
   --color-accent-hover: #000000;
-  --color-accent-subtle: rgba(0, 0, 0, 0.06);
-  --color-accent-text: #1D1D1F;
+  --color-accent-subtle: rgba(0, 0, 0, 0.05);
+  --color-accent-text: #FFFFFF;
 
-  --bg-app: #F5F5F7;
+  --bg-app: #F2F2F7;
   --bg-surface: #FFFFFF;
   --bg-surface-elevated: #FFFFFF;
-  --bg-surface-secondary: #F5F5F7;
-  --bg-surface-hover: rgba(0, 0, 0, 0.03);
-  --bg-frosted: rgba(255, 255, 255, 0.72);
-  --bg-input: #F5F5F7;
+  --bg-surface-secondary: #EAEAEE;
+  --bg-surface-hover: rgba(0, 0, 0, 0.04);
+  --bg-frosted: rgba(255, 255, 255, 0.85);
+  --bg-input: #EFEFF3;
 
   --text-primary: #1D1D1F;
-  --text-secondary: #86868B;
-  --text-tertiary: #AEAEB2;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #8E8E93;
   --text-on-accent: #FFFFFF;
 
-  --border-hairline: rgba(0, 0, 0, 0.06);
-  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-hairline: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.12);
   --border-focus: #6D63E6;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.10);
+  --shadow-float: 0 20px 48px -8px rgba(0, 0, 0, 0.14);
 
   --danger-bg: #FF3B30;
   --danger-subtle: rgba(255, 59, 48, 0.08);
@@ -108,25 +107,31 @@
   :root:not([data-theme="light"]) {
     --color-accent: #FFFFFF;
     --color-accent-hover: #E5E5EA;
-    --color-accent-subtle: rgba(255, 255, 255, 0.06);
-    --color-accent-text: #FFFFFF;
+    --color-accent-subtle: rgba(255, 255, 255, 0.08);
+    --color-accent-text: #0D0D0E;
 
-    --bg-app: #000000;
-    --bg-surface: #1C1C1E;
-    --bg-surface-elevated: #2C2C2E;
-    --bg-surface-secondary: #1C1C1E;
-    --bg-surface-hover: rgba(255, 255, 255, 0.04);
-    --bg-frosted: rgba(28, 28, 30, 0.72);
-    --bg-input: rgba(255, 255, 255, 0.06);
+    --bg-app: #0A0A0C;
+    --bg-surface: #121215;
+    --bg-surface-elevated: #18181C;
+    --bg-surface-secondary: #202025;
+    --bg-surface-hover: rgba(255, 255, 255, 0.06);
+    --bg-frosted: rgba(24, 24, 28, 0.85);
+    --bg-input: #1F1F24;
 
     --text-primary: #F5F5F7;
-    --text-secondary: #98989D;
-    --text-tertiary: #636366;
-    --text-on-accent: #000000;
+    --text-secondary: #A1A1A8;
+    --text-tertiary: #787882;
+    --text-on-accent: #0D0D0E;
 
-    --border-hairline: rgba(255, 255, 255, 0.06);
-    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-hairline: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.12);
     --border-focus: #6D63E6;
+
+    --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+    --shadow-float: 0 24px 54px -10px rgba(0, 0, 0, 0.75);
 
     --danger-bg: #FF453A;
     --danger-subtle: rgba(255, 69, 58, 0.12);
@@ -146,25 +151,31 @@
 [data-theme="dark"] {
   --color-accent: #FFFFFF;
   --color-accent-hover: #E5E5EA;
-  --color-accent-subtle: rgba(255, 255, 255, 0.06);
-  --color-accent-text: #FFFFFF;
+  --color-accent-subtle: rgba(255, 255, 255, 0.08);
+  --color-accent-text: #0D0D0E;
 
-  --bg-app: #000000;
-  --bg-surface: #1C1C1E;
-  --bg-surface-elevated: #2C2C2E;
-  --bg-surface-secondary: #1C1C1E;
-  --bg-surface-hover: rgba(255, 255, 255, 0.04);
-  --bg-frosted: rgba(28, 28, 30, 0.72);
-  --bg-input: rgba(255, 255, 255, 0.06);
+  --bg-app: #0A0A0C;
+  --bg-surface: #121215;
+  --bg-surface-elevated: #18181C;
+  --bg-surface-secondary: #202025;
+  --bg-surface-hover: rgba(255, 255, 255, 0.06);
+  --bg-frosted: rgba(24, 24, 28, 0.85);
+  --bg-input: #1F1F24;
 
   --text-primary: #F5F5F7;
-  --text-secondary: #98989D;
-  --text-tertiary: #636366;
-  --text-on-accent: #000000;
+  --text-secondary: #A1A1A8;
+  --text-tertiary: #787882;
+  --text-on-accent: #0D0D0E;
 
-  --border-hairline: rgba(255, 255, 255, 0.06);
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hairline: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.12);
   --border-focus: #6D63E6;
+
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+  --shadow-float: 0 24px 54px -10px rgba(0, 0, 0, 0.75);
 
   --danger-bg: #FF453A;
   --danger-subtle: rgba(255, 69, 58, 0.12);
