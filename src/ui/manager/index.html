@@ -509,6 +509,65 @@
     </div>
   </div>
 
+  <!-- Delete Category Modal -->
+  <div class="modal-backdrop" id="delete-category-modal" style="display: none;">
+    <div class="modal-dialog modal-dialog-category">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3 class="modal-title" id="delete-category-modal-title">Delete Category</h3>
+          <p class="modal-subtitle" id="delete-category-modal-subtitle">Manage snippets inside this category</p>
+        </div>
+        <button class="btn-circle-action modal-close-btn" id="btn-close-delete-category-modal" title="Cancel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div id="delete-category-options-wrap">
+          <p class="category-modal-desc" id="delete-category-warning-desc">
+            This category contains snippets. Choose what to do with them:
+          </p>
+
+          <div class="category-choice-card active" id="card-choice-move">
+            <label class="category-choice-label">
+              <input type="radio" name="delete-category-action" value="move" checked id="radio-category-move">
+              <div class="category-choice-content">
+                <span class="category-choice-title">Move snippets to another category</span>
+                <span class="category-choice-hint">Keep all snippets in this category and switch them to another folder</span>
+              </div>
+            </label>
+            <div class="category-choice-dropdown" id="category-move-dropdown-wrap">
+              <label class="field-label" for="delete-category-target-select">Destination category:</label>
+              <select class="select-input" id="delete-category-target-select"></select>
+            </div>
+          </div>
+
+          <div class="category-choice-card category-choice-danger" id="card-choice-delete">
+            <label class="category-choice-label">
+              <input type="radio" name="delete-category-action" value="delete" id="radio-category-delete">
+              <div class="category-choice-content">
+                <span class="category-choice-title">Delete all snippets in this category</span>
+                <span class="category-choice-hint" id="delete-category-snippets-count">Permanently removes all snippets inside this category</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="delete-category-empty-msg" style="display: none;" class="category-modal-empty">
+          This category is empty. Deleting it will remove the category tab.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-delete-category">Cancel</button>
+        <button class="btn btn-danger btn-sm" id="btn-confirm-delete-category">Delete Category</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Guided Product Tour Overlay for First-Time Users -->
   <div class="tour-overlay" id="tour-overlay" style="display: none;"></div>
 

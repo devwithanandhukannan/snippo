@@ -4,6 +4,7 @@
  */
 
 import { SnippetStore } from '../data/store';
+import { TemplateResolver } from '../core/resolver';
 
 // 1. Install & Update Lifecycle
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -93,14 +94,17 @@ chrome.omnibox.onInputChanged.addListener(async (text, suggest) => {
 
 chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
   const snippets = await SnippetStore.getAllSnippets();
-  const query = text.trim();
+  const query = text.trim().toLowerCase();
   const snip = snippets.find(
     (s) =>
-      s.trigger.toLowerCase() === query.toLowerCase() ||
-      s.trigger.toLowerCase() === ('/' + query).toLowerCase()
+      s.trigger.toLowerCase() === query ||
+      s.trigger.toLowerCase() === ('/' + query) ||
+      s.trigger.replace(/^[\/;!]/, '').toLowerCase() === query
   );
 
-  const finalText = snip ? snip.body : text;
+  const rawBody = snip ? snip.body : text;
+  const resolved = TemplateResolver.resolve(rawBody);
+  const finalText = resolved.text;
 
   // If the expansion is a web URL, navigate directly!
   if (finalText.startsWith('http://') || finalText.startsWith('https://')) {
@@ -119,14 +123,13 @@ chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
       chrome.scripting
         .executeScript({
           target: { tabId: activeTab.id },
-          func: (txt: string, trigger: string) => {
+          func: (txt: string) => {
             navigator.clipboard.writeText(txt).catch(() => {});
-            alert(`Snippo: "${trigger}" expanded to:\n\n${txt}\n\n(Copied to clipboard!)`);
           },
-          args: [finalText, snip?.trigger || text],
+          args: [finalText],
         })
         .catch(() => {
-          // Fallback: search Google with the expanded text
+          // Fallback: search Google with the expanded text if on an unscriptable page
           if (activeTab.id) {
             chrome.tabs.update(activeTab.id, {
               url: `https://www.google.com/search?q=${encodeURIComponent(finalText)}`,

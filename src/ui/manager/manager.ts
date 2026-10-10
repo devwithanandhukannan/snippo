@@ -29,8 +29,10 @@ class ManagerWorkspace {
   private undoSecondsRemaining = 8;
   private testMatcher = new TriggerMatcher();
   private customFolders = new Set<string>();
+  private deletedDefaultFolders = new Set<string>();
+  private categoryPendingDelete = '';
   private isSidebarCollapsed = false;
-  private saveToastTimer: any = null;
+  private saveToastTimer = null as any;
 
   // Onboarding Tour state
   private currentTourStep = 0;
@@ -67,6 +69,7 @@ class ManagerWorkspace {
     this.renderVariablesToolbar();
     this.setupEventListeners();
     this.setupTestModal();
+    this.setupDeleteCategoryModal();
     this.setupOnboardingTour();
     this.renderFolders();
     this.renderSnippetList();
@@ -142,6 +145,13 @@ class ManagerWorkspace {
           arr.forEach((f: string) => this.customFolders.add(f));
         }
       }
+      const delRaw = localStorage.getItem('snippo_deleted_folders');
+      if (delRaw) {
+        const arr = JSON.parse(delRaw);
+        if (Array.isArray(arr)) {
+          arr.forEach((f: string) => this.deletedDefaultFolders.add(f));
+        }
+      }
     } catch (e) {}
   }
 
@@ -151,6 +161,10 @@ class ManagerWorkspace {
         'snippo_custom_folders',
         JSON.stringify(Array.from(this.customFolders))
       );
+      localStorage.setItem(
+        'snippo_deleted_folders',
+        JSON.stringify(Array.from(this.deletedDefaultFolders))
+      );
     } catch (e) {}
   }
 
@@ -158,6 +172,7 @@ class ManagerWorkspace {
     const input = prompt('Enter new category name:');
     if (!input || !input.trim()) return;
     const clean = input.trim();
+    this.deletedDefaultFolders.delete(clean);
     this.customFolders.add(clean);
     this.saveCustomFolders();
     this.renderFolders();
@@ -190,6 +205,194 @@ class ManagerWorkspace {
     }
   }
 
+  // --- Delete Category Modal Management ---
+
+  private setupDeleteCategoryModal(): void {
+    const modal = document.getElementById('delete-category-modal');
+    const closeBtn = document.getElementById('btn-close-delete-category-modal');
+    const cancelBtn = document.getElementById('btn-cancel-delete-category');
+    const confirmBtn = document.getElementById('btn-confirm-delete-category');
+    const radioMove = document.getElementById('radio-category-move') as HTMLInputElement;
+    const radioDelete = document.getElementById('radio-category-delete') as HTMLInputElement;
+    const cardMove = document.getElementById('card-choice-move');
+    const cardDelete = document.getElementById('card-choice-delete');
+
+    const closeModal = () => {
+      if (modal) modal.style.display = 'none';
+      this.categoryPendingDelete = '';
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+        closeModal();
+      }
+    });
+
+    const updateChoiceCards = () => {
+      if (radioMove?.checked) {
+        cardMove?.classList.add('active');
+        cardDelete?.classList.remove('active');
+      } else {
+        cardMove?.classList.remove('active');
+        cardDelete?.classList.add('active');
+      }
+    };
+
+    radioMove?.addEventListener('change', updateChoiceCards);
+    radioDelete?.addEventListener('change', updateChoiceCards);
+
+    cardMove?.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).tagName === 'SELECT') return;
+      if (radioMove) {
+        radioMove.checked = true;
+        updateChoiceCards();
+      }
+    });
+
+    cardDelete?.addEventListener('click', () => {
+      if (radioDelete) {
+        radioDelete.checked = true;
+        updateChoiceCards();
+      }
+    });
+
+    confirmBtn?.addEventListener('click', async () => {
+      await this.executeDeleteCategory();
+      closeModal();
+    });
+  }
+
+  public openDeleteCategoryModal(categoryName: string, allFolders: string[]): void {
+    const modal = document.getElementById('delete-category-modal');
+    const title = document.getElementById('delete-category-modal-title');
+    const subtitle = document.getElementById('delete-category-modal-subtitle');
+    const warningDesc = document.getElementById('delete-category-warning-desc');
+    const countWarning = document.getElementById('delete-category-snippets-count');
+    const targetSelect = document.getElementById('delete-category-target-select') as HTMLSelectElement;
+    const optionsWrap = document.getElementById('delete-category-options-wrap');
+    const emptyMsg = document.getElementById('delete-category-empty-msg');
+    const radioMove = document.getElementById('radio-category-move') as HTMLInputElement;
+    const cardMove = document.getElementById('card-choice-move');
+    const cardDelete = document.getElementById('card-choice-delete');
+
+    if (!modal) return;
+
+    this.categoryPendingDelete = categoryName;
+
+    const matchingSnippets = this.snippets.filter((s) => s.folder === categoryName);
+    const count = matchingSnippets.length;
+
+    if (title) title.textContent = `Delete "${categoryName}"`;
+    if (subtitle) subtitle.textContent = `Manage snippets inside this category`;
+
+    if (count === 0) {
+      if (optionsWrap) optionsWrap.style.display = 'none';
+      if (emptyMsg) {
+        emptyMsg.style.display = 'block';
+        emptyMsg.textContent = `Category "${categoryName}" has no snippets. Deleting it will remove the category tab.`;
+      }
+    } else {
+      if (optionsWrap) optionsWrap.style.display = 'block';
+      if (emptyMsg) emptyMsg.style.display = 'none';
+
+      if (warningDesc) {
+        warningDesc.textContent = `"${categoryName}" contains ${count} snippet${count > 1 ? 's' : ''}. Choose what to do:`;
+      }
+      if (countWarning) {
+        countWarning.textContent = `Permanently removes all ${count} snippet${count > 1 ? 's' : ''} inside "${categoryName}".`;
+      }
+
+      // Populate destination categories (excluding the one being deleted)
+      if (targetSelect) {
+        targetSelect.innerHTML = '';
+        const destinationFolders = allFolders.filter((f) => f !== categoryName && f !== 'All');
+        if (destinationFolders.length === 0) {
+          destinationFolders.push('General');
+        }
+        destinationFolders.forEach((f) => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          targetSelect.appendChild(opt);
+        });
+        targetSelect.value = destinationFolders[0];
+      }
+
+      if (radioMove) radioMove.checked = true;
+      cardMove?.classList.add('active');
+      cardDelete?.classList.remove('active');
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  private async executeDeleteCategory(): Promise<void> {
+    if (!this.categoryPendingDelete) return;
+
+    const categoryToDelete = this.categoryPendingDelete;
+    const matchingSnippets = this.snippets.filter((s) => s.folder === categoryToDelete);
+    const radioMove = document.getElementById('radio-category-move') as HTMLInputElement;
+    const targetSelect = document.getElementById('delete-category-target-select') as HTMLSelectElement;
+
+    const shouldMove = matchingSnippets.length > 0 && radioMove?.checked;
+    const targetCategory = shouldMove ? (targetSelect?.value || 'General') : '';
+
+    if (shouldMove) {
+      // Switch all snippets in this category to destination category
+      for (const snip of matchingSnippets) {
+        snip.folder = targetCategory;
+        await SnippetStore.saveSnippet(snip);
+      }
+    } else if (matchingSnippets.length > 0) {
+      // Permanently delete all snippets in this category
+      for (const snip of matchingSnippets) {
+        await SnippetStore.deleteSnippet(snip.id);
+      }
+    }
+
+    // Remove from custom folders and track in deletedDefaultFolders
+    this.customFolders.delete(categoryToDelete);
+    this.deletedDefaultFolders.add(categoryToDelete);
+    this.saveCustomFolders();
+
+    // Adjust active folder if currently viewing the deleted folder
+    if (this.activeFolder === categoryToDelete) {
+      this.activeFolder = shouldMove ? targetCategory : 'All';
+    }
+
+    // Refresh store & UI
+    this.snippets = await SnippetStore.getAllSnippets();
+    this.renderFolders();
+    this.renderSnippetList();
+
+    if (this.selectedSnippetId) {
+      const stillExists = this.snippets.some((s) => s.id === this.selectedSnippetId);
+      if (stillExists) {
+        this.selectSnippet(this.selectedSnippetId);
+      } else if (this.snippets.length > 0) {
+        this.selectSnippet(this.snippets[0].id);
+      } else {
+        this.showEmptyState();
+      }
+    }
+
+    // Broadcast update across extension
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
+    }
+
+    const toastMsg = shouldMove
+      ? `Deleted "${categoryToDelete}". ${matchingSnippets.length} snippets switched to "${targetCategory}".`
+      : `Deleted category "${categoryToDelete}".`;
+    this.showSaveToast(toastMsg);
+  }
+
   // --- Renderers ---
 
   private renderFolders(): void {
@@ -198,25 +401,65 @@ class ManagerWorkspace {
 
     // Discover unique folders
     const folderSet = new Set<string>();
-    ['General', 'Personal', 'Work'].forEach((f) => folderSet.add(f));
-    this.customFolders.forEach((f) => folderSet.add(f));
-    this.snippets.forEach((s) => {
-      if (s.folder) folderSet.add(s.folder);
+    ['General', 'Personal', 'Work'].forEach((f) => {
+      if (!this.deletedDefaultFolders.has(f)) folderSet.add(f);
     });
+    this.customFolders.forEach((f) => {
+      if (!this.deletedDefaultFolders.has(f)) folderSet.add(f);
+    });
+    this.snippets.forEach((s) => {
+      if (s.folder && !this.deletedDefaultFolders.has(s.folder)) folderSet.add(s.folder);
+    });
+
+    if (folderSet.size === 0) {
+      folderSet.add('General');
+    }
 
     const folders = ['All', ...Array.from(folderSet)];
     nav.innerHTML = '';
 
     folders.forEach((f) => {
-      const tab = document.createElement('button');
-      tab.className = `folder-tab ${this.activeFolder === f ? 'active' : ''}`;
-      tab.textContent = f;
-      tab.addEventListener('click', () => {
-        this.activeFolder = f;
-        this.renderFolders();
-        this.renderSnippetList();
-      });
-      nav.appendChild(tab);
+      if (f === 'All') {
+        const tab = document.createElement('button');
+        tab.className = `folder-tab ${this.activeFolder === f ? 'active' : ''}`;
+        tab.textContent = f;
+        tab.addEventListener('click', () => {
+          this.activeFolder = f;
+          this.renderFolders();
+          this.renderSnippetList();
+        });
+        nav.appendChild(tab);
+      } else {
+        const pill = document.createElement('div');
+        pill.className = `folder-tab-pill ${this.activeFolder === f ? 'active' : ''}`;
+
+        const tabBtn = document.createElement('button');
+        tabBtn.className = 'folder-tab-btn';
+        tabBtn.textContent = f;
+        tabBtn.addEventListener('click', () => {
+          this.activeFolder = f;
+          this.renderFolders();
+          this.renderSnippetList();
+        });
+        pill.appendChild(tabBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'folder-tab-del-btn';
+        delBtn.title = `Delete category "${f}"`;
+        delBtn.innerHTML = `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openDeleteCategoryModal(f, Array.from(folderSet));
+        });
+        pill.appendChild(delBtn);
+
+        nav.appendChild(pill);
+      }
     });
 
     // Add "+" tab in sidebar folder navigation

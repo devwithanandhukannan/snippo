@@ -197,6 +197,156 @@ body {
   color: #FFFFFF;
 }
 
+/* Category Tab Pill with Delete Option */
+.folder-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  transition: all var(--dur-fast) ease;
+  padding: 0 4px 0 0;
+  flex-shrink: 0;
+}
+
+.folder-tab-pill:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.folder-tab-pill.active {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.folder-tab-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.folder-tab-del-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+  padding: 0;
+}
+
+.folder-tab-pill:hover .folder-tab-del-btn {
+  opacity: 0.8;
+}
+
+.folder-tab-del-btn:hover {
+  opacity: 1 !important;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Category Delete Modal */
+.modal-dialog-category {
+  max-width: 480px;
+}
+
+.category-modal-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.category-choice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background-color: var(--bg-surface-secondary);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+  margin-bottom: 8px;
+}
+
+.category-choice-card:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.category-choice-card.active {
+  border-color: var(--color-brand-violet, #5B5BD6);
+  background-color: rgba(91, 91, 214, 0.08);
+}
+
+.category-choice-danger.active {
+  border-color: var(--color-danger, #ef4444);
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+.category-choice-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-choice-label input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--color-brand-violet, #5B5BD6);
+  cursor: pointer;
+}
+
+.category-choice-danger .category-choice-label input[type="radio"] {
+  accent-color: #ef4444;
+}
+
+.category-choice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.category-choice-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.category-choice-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.35;
+}
+
+.category-choice-dropdown {
+  margin-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.category-modal-empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 0;
+  line-height: 1.4;
+}
+
 /* Snippets List */
 .sidebar-list {
   flex: 1;
