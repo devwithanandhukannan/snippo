@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snippo — Workspace</title>
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <link rel="stylesheet" href="manager.css">
+</head>
+<body>
+  <div class="workspace-layout">
+    <!-- Sidebar Left (Apple Notes / Settings pattern) -->
+    <aside class="workspace-sidebar">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="brand-logo" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="manager-brand-clip">
+                  <rect width="32" height="32" rx="8.5"/>
+                </clipPath>
+              </defs>
+              <g clip-path="url(#manager-brand-clip)">
+                <rect width="32" height="32" fill="#5B5BD6"/>
+                <rect width="32" height="16" fill="#6D63E6"/>
+                <line x1="19.5" y1="8" x2="11.5" y2="24" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="23.5" y1="14" x2="23.5" y2="24" stroke="#3DDC97" stroke-width="3.5" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <span class="brand-title">snippo<span class="brand-slash">/</span></span>
+        </div>
+        <!-- Primary Action (Fitts's Law) -->
+        <button class="btn btn-primary btn-new-snippet" id="btn-sidebar-new">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Snippet
+        </button>
+      </div>
+
+      <!-- Search in Sidebar -->
+      <div class="sidebar-search">
+        <div class="search-box">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="sidebar-search-input" class="search-input" placeholder="Search snippets...">
+        </div>
+      </div>
+
+      <!-- Folders Navigation (Miller's Law) -->
+      <div class="sidebar-folders" id="sidebar-folders-nav">
+        <!-- Dynamically rendered folder tabs -->
+      </div>
+
+      <!-- Snippet List Items -->
+      <div class="sidebar-list" id="sidebar-snippet-list">
+        <!-- Dynamically filled list -->
+      </div>
+
+      <!-- Sidebar Footer: Settings & Stats -->
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost btn-sm" id="btn-tab-settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Settings & Backup
+        </button>
+        <span class="text-xs text-muted" id="total-stats-label">0 snippets</span>
+      </div>
+    </aside>
+
+    <!-- Detail Pane Right -->
+    <main class="workspace-main" id="workspace-main-pane">
+      <!-- Editor View -->
+      <section class="editor-view" id="editor-view">
+        <header class="editor-header">
+          <div class="editor-header-left">
+            <span class="badge-trigger large-trigger" id="detail-trigger-badge">/trigger</span>
+            <span class="badge-count" id="detail-usage-badge">0 expansions</span>
+          </div>
+          <div class="editor-header-right">
+            <label class="switch-with-label" title="Enable or disable this snippet">
+              <span class="text-xs text-muted">Enabled</span>
+              <label class="switch">
+                <input type="checkbox" id="detail-enabled-switch" checked>
+                <span class="slider"></span>
+              </label>
+            </label>
+            <button class="btn btn-danger btn-sm" id="btn-delete-snippet" title="Delete this snippet">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </header>
+
+        <!-- Inline Conflict Warning (Error Prevention Principle) -->
+        <div class="conflict-banner" id="conflict-warning-banner" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span id="conflict-warning-text">Conflict detected with another trigger</span>
+        </div>
+
+        <!-- Form fields -->
+        <div class="editor-body">
+          <div class="form-row-grid">
+            <!-- Trigger Input -->
+            <div class="field-group">
+              <label class="field-label" for="detail-trigger-input">Trigger</label>
+              <div class="input-prefix-box">
+                <span class="input-prefix-tag" id="trigger-prefix-display">/</span>
+                <input type="text" id="detail-trigger-input" class="field-input field-mono" placeholder="omw" autocomplete="off">
+              </div>
+            </div>
+
+            <!-- Folder Select / Add -->
+            <div class="field-group">
+              <label class="field-label" for="detail-folder-input">Folder</label>
+              <input type="text" id="detail-folder-input" class="field-input" placeholder="General" list="folder-datalist">
+              <datalist id="folder-datalist"></datalist>
+            </div>
+          </div>
+
+          <!-- Description / Label -->
+          <div class="field-group">
+            <label class="field-label" for="detail-desc-input">Description (Optional)</label>
+            <input type="text" id="detail-desc-input" class="field-input" placeholder="e.g. Quick on my way reply">
+          </div>
+
+          <!-- Expansion Body Textarea with Dynamic Variable Toolbar -->
+          <div class="field-group">
+            <div class="textarea-header">
+              <label class="field-label" for="detail-body-textarea">Expansion Body</label>
+              <span class="text-xs text-muted">Insert dynamic tags:</span>
+            </div>
+            
+            <!-- Dynamic Variable Chips Toolbar -->
+            <div class="variables-toolbar" id="variables-toolbar">
+              <!-- Dynamically populated from TemplateResolver -->
+            </div>
+
+            <textarea id="detail-body-textarea" class="field-textarea" rows="6" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
+          </div>
+
+          <!-- Interactive Live Test Zone (Peak-End Rule & Error Prevention) -->
+          <div class="live-test-card">
+            <div class="test-header">
+              <span class="test-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Live Practice Field
+              </span>
+              <span class="text-xs text-muted">Type your trigger here to test expansion immediately</span>
+            </div>
+            <input type="text" id="live-test-field" class="field-input live-test-input" placeholder="Click and type your trigger to test live...">
+          </div>
+
+          <!-- Save status feedback bar -->
+          <div class="editor-footer">
+            <div class="save-status" id="save-status-msg">All changes saved locally</div>
+            <button class="btn btn-primary" id="btn-save-snippet">Save Snippet</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings View Pane (progressive disclosure) -->
+      <section class="settings-view" id="settings-view" style="display: none;">
+        <header class="settings-header">
+          <h2>Settings & Preferences</h2>
+          <button class="btn btn-ghost btn-sm" id="btn-close-settings">← Back to Editor</button>
+        </header>
+
+        <div class="settings-content">
+          <!-- Trigger Prefix Preference -->
+          <div class="settings-card">
+            <h3>Trigger Configuration</h3>
+            <p class="text-sm text-muted">Choose your preferred shortcut prefix symbol for triggers.</p>
+            <div class="settings-row">
+              <label class="field-label">Prefix Symbol</label>
+              <select id="setting-prefix-select" class="field-select">
+                <option value="/">/ (Slash — e.g. /omw)</option>
+                <option value=";">; (Semicolon — e.g. ;omw)</option>
+                <option value="!">! (Exclamation — e.g. !omw)</option>
+                <option value="">None (Plain word match)</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label class="field-label">Expansion Trigger</label>
+              <select id="setting-expand-mode" class="field-select">
+                <option value="immediate">Immediate (expands right when typed)</option>
+                <option value="space">After Spacebar (expands when pressing space)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Site Exclusion Manager -->
+          <div class="settings-card">
+            <h3>Site Exclusions (Paused Websites)</h3>
+            <p class="text-sm text-muted">Snippo will never listen or expand on these domains.</p>
+            <div class="exclusion-add-bar">
+              <input type="text" id="new-exclusion-input" class="field-input" placeholder="e.g. example.com">
+              <button class="btn btn-secondary btn-sm" id="btn-add-exclusion">Add Domain</button>
+            </div>
+            <div class="exclusion-list" id="exclusion-domains-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Backup & Restore -->
+          <div class="settings-card">
+            <h3>Backup & Restore (JSON)</h3>
+            <p class="text-sm text-muted">Your data is stored 100% locally. Export backups or restore anytime.</p>
+            <div class="backup-actions">
+              <button class="btn btn-secondary" id="btn-export-backup">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export Backup (JSON)
+              </button>
+              <label class="btn btn-secondary" style="cursor: pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Import Backup (JSON)
+                <input type="file" id="input-import-file" accept=".json" style="display: none;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Privacy Guarantee -->
+          <div class="settings-card privacy-callout">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Privacy Guarantee
+            </h3>
+            <p class="text-sm">
+              Snippo has zero network permissions, zero analytics, zero external API connections, and zero tracking.
+              Every keystroke and snippet is strictly contained within your browser storage.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty State when no snippet selected -->
+      <div class="workspace-empty" id="workspace-empty-state" style="display: none;">
+        <div class="empty-content">
+          <div class="empty-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+              <line x1="6" y1="8" x2="6.01" y2="8"></line>
+              <line x1="10" y1="8" x2="10.01" y2="8"></line>
+              <line x1="14" y1="8" x2="14.01" y2="8"></line>
+              <line x1="18" y1="8" x2="18.01" y2="8"></line>
+              <line x1="6" y1="12" x2="6.01" y2="12"></line>
+              <line x1="10" y1="12" x2="10.01" y2="12"></line>
+              <line x1="14" y1="12" x2="14.01" y2="12"></line>
+              <line x1="18" y1="12" x2="18.01" y2="12"></line>
+              <line x1="7" y1="16" x2="17" y2="16"></line>
+            </svg>
+          </div>
+          <h2>Select or Create a Snippet</h2>
+          <p class="text-muted">Choose a snippet from the sidebar on the left or tap "+ New Snippet" to create one.</p>
+          <button class="btn btn-primary" id="btn-empty-create">Create New Snippet</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Loss Aversion Principle: 8-second Undo Toast -->
+  <div class="toast-undo" id="delete-undo-toast">
+    <span>Snippet deleted.</span>
+    <button class="toast-undo-btn" id="btn-toast-undo">Undo (<span id="undo-countdown">8</span>s)</button>
+  </div>
+
+  <script type="module" src="manager.ts"></script>
+</body>
+</html>

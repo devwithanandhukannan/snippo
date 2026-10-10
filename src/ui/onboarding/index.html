@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Snippo</title>
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <div class="onboarding-container">
+    <!-- Progress Indicator -->
+    <div class="steps-progress">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+    </div>
+
+    <!-- Step 1: Create an example snippet -->
+    <section class="onboarding-step active" id="step-1">
+      <div class="step-badge">Step 1 of 3</div>
+      <h1 class="step-title">Your first snippet</h1>
+      <p class="step-desc">
+        Pick a trigger shortcut and what it expands into. Everything stays private on this device.
+      </p>
+
+      <div class="snippet-preset-card">
+        <div class="field-group">
+          <label class="field-label" for="ob-trigger">When I type:</label>
+          <div class="input-prefix-box">
+            <span class="input-prefix-tag">/</span>
+            <input type="text" id="ob-trigger" class="field-input field-mono" value="intro" placeholder="intro">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="ob-body">Expand into:</label>
+          <textarea id="ob-body" class="field-textarea" rows="3">Hi there, I'm using Snippo to type faster and save time!</textarea>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" id="btn-next-step-1">
+        Next: Try it out →
+      </button>
+    </section>
+
+    <!-- Step 2: Live practice field -->
+    <section class="onboarding-step" id="step-2" style="display: none;">
+      <div class="step-badge">Step 2 of 3</div>
+      <h1 class="step-title">Try it in action</h1>
+      <p class="step-desc">
+        Click the practice field below and type <strong id="practice-trigger-label">/intro</strong> to watch it expand automatically.
+      </p>
+
+      <div class="interactive-sandbox">
+        <div class="sandbox-instructions">Sandbox Input</div>
+        <input type="text" id="sandbox-input" class="field-input sandbox-field" placeholder="Click here and type your trigger..." autofocus>
+        <div class="sandbox-hint" id="sandbox-hint">Type <span class="badge-trigger" id="hint-trigger-badge">/intro</span></div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" id="btn-next-step-2" disabled>
+        Continue to Workspace →
+      </button>
+    </section>
+
+    <!-- Step 3: All set! -->
+    <section class="onboarding-step" id="step-3" style="display: none;">
+      <div class="step-badge">Step 3 of 3</div>
+      <div class="completion-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h1 class="step-title">You're ready to fly</h1>
+      <p class="step-desc">
+        Snippo is active across your browser tabs. Whenever you type a trigger, it expands silently and effortlessly.
+      </p>
+
+      <div class="summary-cards-grid">
+        <div class="summary-item">
+          <strong style="display: flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Under 1ms
+          </strong>
+          <span>Instant keystroke matching</span>
+        </div>
+        <div class="summary-item">
+          <strong style="display: flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            100% Local
+          </strong>
+          <span>No accounts, zero network traffic</span>
+        </div>
+        <div class="summary-item">
+          <strong style="display: flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 14 4 9 9 4"></polyline>
+              <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+            </svg>
+            Instant Undo
+          </strong>
+          <span>Hit Esc or click Undo to revert</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" id="btn-finish-onboarding">
+        Open Snippet Workspace
+      </button>
+    </section>
+  </div>
+
+  <script type="module" src="onboarding.ts"></script>
+</body>
+</html>

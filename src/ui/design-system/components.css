@@ -1,0 +1,354 @@
+/**
+ * Verbatim Component Styles: Apple-style controls, cards, lists, toasts, and inputs.
+ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-system);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.45;
+  user-select: none;
+}
+
+/* Typography Helpers */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+.text-xs {
+  font-size: var(--text-xs);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-spring);
+  text-decoration: none;
+  white-space: nowrap;
+  outline: none;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-subtle), 0 0 0 1px var(--color-accent);
+}
+
+/* Fitts's law: Primary accent button */
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 1px 3px rgba(0, 113, 227, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-0.5px);
+}
+
+.btn-primary:active {
+  transform: translateY(0.5px) scale(0.99);
+}
+
+.btn-secondary {
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-hairline);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background-color: var(--danger-subtle);
+  color: var(--danger-text);
+  border-color: transparent;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-bg);
+  color: #FFFFFF;
+}
+
+.btn-icon {
+  padding: 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* Form Inputs */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.field-input,
+.field-textarea,
+.field-select {
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  user-select: text;
+}
+
+.field-textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field-input:focus,
+.field-textarea:focus,
+.field-select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.field-mono {
+  font-family: var(--font-mono);
+}
+
+/* Input with Prefix */
+.input-prefix-box {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+
+.input-prefix-box:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.input-prefix-tag {
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-right: 1px solid var(--border-hairline);
+  font-size: var(--text-sm);
+  user-select: none;
+}
+
+.input-prefix-box .field-input {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  flex: 1;
+}
+
+/* Badges & Tags */
+.badge-trigger {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent-text);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(0, 113, 227, 0.16);
+  letter-spacing: -0.01em;
+}
+
+.badge-folder {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-secondary);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+}
+
+.badge-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background-color: var(--bg-surface-secondary);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* Apple-style Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-subtle);
+  transition: var(--dur-fast) var(--ease-spring);
+  border-radius: var(--radius-full);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--dur-spring) var(--ease-spring);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .slider {
+  background-color: var(--color-accent);
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+/* Variable Pills Toolbar */
+.variables-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.pill-variable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-hairline);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  padding: 4px 9px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+}
+
+.pill-variable:hover {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent-text);
+  border-color: rgba(0, 113, 227, 0.25);
+  transform: translateY(-0.5px);
+}
+
+/* Loss Aversion: 8-second Undo Toast */
+.toast-undo {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0;
+  background-color: #1C1C1E;
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-float);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  z-index: 9999;
+  pointer-events: none;
+  transition: transform var(--dur-spring) var(--ease-spring), opacity var(--dur-spring) var(--ease-spring);
+}
+
+.toast-undo.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toast-undo-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toast-undo-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

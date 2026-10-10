@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Snippo: Type less. Say more.",
+  "short_name": "Snippo",
+  "version": "1.0.0",
+  "description": "Ultra-fast, 100% local text expansion extension. Type less and say more without keystrokes ever leaving your device.",
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "ui/popup/index.html",
+    "default_title": "Snippo",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background/worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/entry.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "options_ui": {
+    "page": "ui/manager/index.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "open-manager": {
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "mac": "Alt+Shift+V"
+      },
+      "description": "Open Snippo Workspace"
+    }
+  },
+  "omnibox": {
+    "keyword": "s"
+  }
+}

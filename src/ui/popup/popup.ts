@@ -1,0 +1,190 @@
+/**
+ * Popup Controller: Fast search, tab site pause toggle, and snippet launcher.
+ * Budget: Open to interactive in < 100ms.
+ */
+
+import { Snippet } from '../../core/types';
+import { SnippetStore } from '../../data/store';
+import { TriggerMatcher } from '../../core/matcher';
+import { TemplateResolver } from '../../core/resolver';
+
+class PopupController {
+  private snippets: Snippet[] = [];
+  private currentHostname = '';
+  private matcher: TriggerMatcher = new TriggerMatcher();
+
+  public async init(): Promise<void> {
+    await SnippetStore.init();
+    await this.resolveCurrentTab();
+    await this.loadData();
+    this.bindEvents();
+    this.setupPracticeInput();
+  }
+
+  private async resolveCurrentTab(): Promise<void> {
+    if (typeof chrome !== 'undefined' && chrome.tabs?.query) {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.url) {
+          const url = new URL(tab.url);
+          this.currentHostname = url.hostname;
+        }
+      } catch {
+        // Fallback or restricted url (chrome://)
+      }
+    }
+
+    const siteStatusEl = document.getElementById('site-status-text');
+    const toggleEl = document.getElementById('site-toggle') as HTMLInputElement;
+
+    if (this.currentHostname) {
+      const isExcluded = await SnippetStore.isDomainExcluded(this.currentHostname);
+      if (toggleEl) toggleEl.checked = !isExcluded;
+      if (siteStatusEl) {
+        siteStatusEl.textContent = isExcluded
+          ? `Paused on ${this.currentHostname}`
+          : `Active on ${this.currentHostname}`;
+      }
+    } else {
+      if (siteStatusEl) siteStatusEl.textContent = 'Active locally';
+    }
+  }
+
+  private async loadData(): Promise<void> {
+    this.snippets = await SnippetStore.getAllSnippets();
+    const index = await SnippetStore.getTriggerIndex();
+    this.matcher.updateIndex(index);
+    this.renderList(this.snippets);
+  }
+
+  private renderList(list: Snippet[]): void {
+    const container = document.getElementById('snippets-list');
+    const countBadge = document.getElementById('snippet-count-badge');
+    const emptyState = document.getElementById('empty-state');
+
+    if (!container) return;
+    if (countBadge) countBadge.textContent = String(list.length);
+
+    // Clear previous items except empty state
+    container.querySelectorAll('.snippet-card').forEach((el) => el.remove());
+
+    if (list.length === 0) {
+      if (emptyState) emptyState.style.display = 'block';
+      return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    list.slice(0, 30).forEach((snip) => {
+      const card = document.createElement('div');
+      card.className = 'snippet-card';
+      card.setAttribute('data-id', snip.id);
+
+      card.innerHTML = `
+        <div class="snippet-card-top">
+          <span class="badge-trigger">${this.escapeHtml(snip.trigger)}</span>
+          <div class="snippet-meta">
+            <span class="badge-folder">${this.escapeHtml(snip.folder || 'General')}</span>
+            ${snip.usageCount ? `<span class="badge-count">${snip.usageCount}×</span>` : ''}
+          </div>
+        </div>
+        <div class="snippet-card-body">${this.escapeHtml(snip.body.replace(/\n/g, ' '))}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        this.openManager(snip.id);
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  private bindEvents(): void {
+    // Search input
+    const searchInput = document.getElementById('popup-search') as HTMLInputElement;
+    searchInput?.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+      if (!query) {
+        this.renderList(this.snippets);
+        return;
+      }
+      const filtered = this.snippets.filter(
+        (s) =>
+          s.trigger.toLowerCase().includes(query) ||
+          s.body.toLowerCase().includes(query) ||
+          (s.description && s.description.toLowerCase().includes(query)) ||
+          (s.folder && s.folder.toLowerCase().includes(query))
+      );
+      this.renderList(filtered);
+    });
+
+    // Site toggle
+    const toggle = document.getElementById('site-toggle') as HTMLInputElement;
+    toggle?.addEventListener('change', async () => {
+      if (this.currentHostname) {
+        const isPaused = !toggle.checked;
+        await SnippetStore.toggleDomainExclusion(this.currentHostname);
+        const statusEl = document.getElementById('site-status-text');
+        if (statusEl) {
+          statusEl.textContent = isPaused
+            ? `Paused on ${this.currentHostname}`
+            : `Active on ${this.currentHostname}`;
+        }
+      }
+    });
+
+    // New Snippet
+    document.getElementById('btn-quick-new')?.addEventListener('click', () => {
+      this.openManager('new');
+    });
+
+    // Open Manager
+    document.getElementById('btn-open-manager')?.addEventListener('click', () => {
+      this.openManager();
+    });
+  }
+
+  private setupPracticeInput(): void {
+    const input = document.getElementById('quick-test-input') as HTMLInputElement;
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+      const val = input.value;
+      const match = this.matcher.matchTail(val);
+      if (match) {
+        const snip = this.snippets.find((s) => s.id === match.snippetId);
+        if (snip) {
+          const resolved = TemplateResolver.resolve(snip.body);
+          const start = val.length - match.tailLength;
+          input.value = val.slice(0, start) + resolved.text;
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+    });
+  }
+
+  private openManager(target?: string): void {
+    const url = chrome.runtime.getURL(
+      target ? `ui/manager/index.html#${target}` : 'ui/manager/index.html'
+    );
+    chrome.tabs.create({ url });
+  }
+
+  private escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (m) => {
+      const map: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      };
+      return map[m];
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const popup = new PopupController();
+  popup.init();
+});
