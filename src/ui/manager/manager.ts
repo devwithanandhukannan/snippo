@@ -1012,7 +1012,9 @@ class ManagerWorkspace {
 
     document.body.classList.add('tour-active');
     const overlay = document.getElementById('tour-overlay');
+    const card = document.getElementById('tour-card');
     if (overlay) overlay.style.display = 'block';
+    if (card) card.style.display = 'flex';
 
     requestAnimationFrame(() => {
       this.renderTourStep();
@@ -1120,10 +1122,35 @@ class ManagerWorkspace {
     // Desktop positioning
     if (arrow) arrow.style.display = 'block';
 
+    // Special handling for Step 1: `btn-sidebar-new` located inside the sidebar
+    if (targetId === 'btn-sidebar-new') {
+      const sidebarEl = document.querySelector('.workspace-sidebar');
+      const sidebarRect = sidebarEl?.getBoundingClientRect();
+      const sidebarRight = sidebarRect ? sidebarRect.right : 260;
+
+      // Position card cleanly to the right of the sidebar, vertically aligned with button
+      const left = sidebarRight + 18;
+      const top = Math.max(16, rect.top - 10);
+      card.style.left = `${left}px`;
+      card.style.top = `${top}px`;
+
+      if (arrow) {
+        arrow.className = 'tour-pointer-arrow arrow-left';
+        arrow.style.left = '-6px';
+        arrow.style.right = 'auto';
+        arrow.style.top = `${Math.max(16, Math.min(cardHeight - 24, rect.top - top + rect.height / 2 - 6))}px`;
+        arrow.style.bottom = 'auto';
+      }
+      return;
+    }
+
+    // Steps 2, 3, 4 (Elements inside the Editor Pane)
     const targetCenterX = rect.left + rect.width / 2;
-    // Align card horizontally centered over target, clamped to screen bounds
+    const sidebarEl = document.querySelector('.workspace-sidebar');
+    const minLeft = (sidebarEl?.getBoundingClientRect()?.right || 260) + 16;
+
     let left = targetCenterX - cardWidth / 2;
-    if (left < 20) left = 20;
+    if (left < minLeft) left = minLeft;
     if (left + cardWidth > window.innerWidth - 20) {
       left = window.innerWidth - cardWidth - 20;
     }
@@ -1137,6 +1164,7 @@ class ManagerWorkspace {
         arrow.className = 'tour-pointer-arrow arrow-top';
         arrow.style.top = '-6px';
         arrow.style.bottom = 'auto';
+        arrow.style.right = 'auto';
         const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
         arrow.style.left = `${arrowLeft}px`;
       }
@@ -1149,6 +1177,7 @@ class ManagerWorkspace {
         arrow.className = 'tour-pointer-arrow arrow-bottom';
         arrow.style.bottom = '-6px';
         arrow.style.top = 'auto';
+        arrow.style.right = 'auto';
         const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
         arrow.style.left = `${arrowLeft}px`;
       }
@@ -1174,7 +1203,9 @@ class ManagerWorkspace {
   private endTour(): void {
     document.body.classList.remove('tour-active');
     const overlay = document.getElementById('tour-overlay');
+    const card = document.getElementById('tour-card');
     if (overlay) overlay.style.display = 'none';
+    if (card) card.style.display = 'none';
     document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
       el.classList.remove('tour-target-spotlight');
     });
