@@ -64,77 +64,181 @@ export class RichEditableAdapter {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return null;
 
+    const originalRange = sel.getRangeAt(0).cloneRange();
     const replacement = resolved.text;
     let replacedSuccessfully = false;
 
-    // Strategy 1: Selection.modify backward selection (the gold standard for Lexical / WhatsApp Web / Draft.js)
+    // Strategy 1: Accurate Text Node Range (Primary for WhatsApp Web / Lexical / React)
     try {
-      sel.collapseToEnd();
-      for (let i = 0; i < triggerLength; i++) {
-        (sel as any).modify?.('extend', 'backward', 'character');
+      let textNode: Node | null = null;
+      let caretOffset = 0;
+
+      if (originalRange.endContainer.nodeType === Node.TEXT_NODE) {
+        textNode = originalRange.endContainer;
+        caretOffset = originalRange.endOffset;
+      } else if (originalRange.endContainer.nodeType === Node.ELEMENT_NODE) {
+        const container = originalRange.endContainer as HTMLElement;
+        const child =
+          container.childNodes[originalRange.endOffset - 1] ||
+          container.childNodes[originalRange.endOffset];
+        if (child) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            textNode = child;
+            caretOffset = child.textContent?.length || 0;
+          } else {
+            const walker = document.createTreeWalker(child, NodeFilter.SHOW_TEXT);
+            let last: Node | null = null;
+            while (walker.nextNode()) last = walker.currentNode;
+            if (last) {
+              textNode = last;
+              caretOffset = last.textContent?.length || 0;
+            }
+          }
+        }
       }
 
-      // Check if selected text matches trigger or length
-      const selected = sel.toString();
-      if (selected.length === triggerLength || selected === originalTrigger) {
-        replacedSuccessfully = document.execCommand('insertText', false, replacement);
+      if (textNode && textNode.textContent) {
+        const textContent = textNode.textContent;
+        const beforeCaret = textContent.slice(0, caretOffset);
+        const cleanBefore = beforeCaret.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+
+        if (cleanBefore.toLowerCase().endsWith(originalTrigger.toLowerCase())) {
+          let charsToMatch = triggerLength;
+          let rawStartIndex = caretOffset;
+          for (let i = caretOffset - 1; i >= 0; i--) {
+            const c = textContent[i];
+            if (c === '\u200B' || c === '\u200C' || c === '\u200D' || c === '\uFEFF') continue;
+            charsToMatch--;
+            if (charsToMatch === 0) {
+              rawStartIndex = i;
+              break;
+            }
+          }
+
+          const triggerRange = document.createRange();
+          triggerRange.setStart(textNode, rawStartIndex);
+          triggerRange.setEnd(textNode, caretOffset);
+
+          sel.removeAllRanges();
+          sel.addRange(triggerRange);
+
+          if (document.activeElement !== element && !element.contains(document.activeElement)) {
+            element.focus();
+          }
+
+          replacedSuccessfully = document.execCommand('insertText', false, replacement);
+        }
       }
     } catch {
       replacedSuccessfully = false;
     }
 
-    // Strategy 2: Direct DOM Range replacement fallback if execCommand was not supported
-    if (!replacedSuccessfully && sel.rangeCount > 0) {
+    // Strategy 2: Multi-Node DOM Range (Handles triggers split across spans)
+    if (!replacedSuccessfully) {
       try {
-        const range = sel.getRangeAt(0);
-        if (range.startContainer.nodeType === Node.TEXT_NODE) {
-          const node = range.startContainer;
-          const offset = range.startOffset;
-          const start = Math.max(0, offset - triggerLength);
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const nodes: { node: Node; len: number }[] = [];
+        let activeIndex = -1;
+        let endContainerOffset = originalRange.endOffset;
 
-          const replaceRange = document.createRange();
-          replaceRange.setStart(node, start);
-          replaceRange.setEnd(node, offset);
+        while (walker.nextNode()) {
+          const n = walker.currentNode;
+          const len = n.textContent?.length || 0;
+          nodes.push({ node: n, len });
+          if (n === originalRange.endContainer) {
+            activeIndex = nodes.length - 1;
+          }
+        }
 
-          sel.removeAllRanges();
-          sel.addRange(replaceRange);
+        if (activeIndex === -1 && nodes.length > 0) {
+          activeIndex = nodes.length - 1;
+          endContainerOffset = nodes[activeIndex].len;
+        }
 
-          try {
-            replacedSuccessfully = document.execCommand('insertText', false, replacement);
-          } catch {
-            replacedSuccessfully = false;
+        if (activeIndex >= 0) {
+          let needed = triggerLength;
+          let currIdx = activeIndex;
+          let currOffset = endContainerOffset;
+          let startNode: Node | null = null;
+          let startOffset = 0;
+
+          while (currIdx >= 0 && needed > 0) {
+            const item = nodes[currIdx];
+            const avail = currOffset;
+            if (avail >= needed) {
+              startNode = item.node;
+              startOffset = avail - needed;
+              needed = 0;
+              break;
+            } else {
+              needed -= avail;
+              currIdx--;
+              if (currIdx >= 0) {
+                currOffset = nodes[currIdx].len;
+              }
+            }
           }
 
-          if (!replacedSuccessfully) {
-            replaceRange.deleteContents();
-            const textNode = document.createTextNode(replacement);
-            replaceRange.insertNode(textNode);
+          if (startNode && needed === 0) {
+            const multiRange = document.createRange();
+            multiRange.setStart(startNode, startOffset);
+            multiRange.setEnd(nodes[activeIndex].node, endContainerOffset);
 
-            const newRange = document.createRange();
-            newRange.setStartAfter(textNode);
-            newRange.collapse(true);
             sel.removeAllRanges();
-            sel.addRange(newRange);
-            replacedSuccessfully = true;
+            sel.addRange(multiRange);
 
-            // Only dispatch synthetic event if native execCommand failed
-            try {
-              element.dispatchEvent(
-                new InputEvent('input', {
-                  bubbles: true,
-                  cancelable: true,
-                  inputType: 'insertReplacementText',
-                  data: replacement,
-                })
-              );
-            } catch {
-              element.dispatchEvent(new Event('input', { bubbles: true }));
+            if (document.activeElement !== element && !element.contains(document.activeElement)) {
+              element.focus();
             }
+
+            replacedSuccessfully = document.execCommand('insertText', false, replacement);
           }
         }
       } catch {
-        // Fallback
+        replacedSuccessfully = false;
       }
+    }
+
+    // Strategy 3: Selection.modify backward extension (fallback for native contenteditable)
+    if (!replacedSuccessfully) {
+      try {
+        sel.removeAllRanges();
+        sel.addRange(originalRange);
+        sel.collapse(originalRange.endContainer, originalRange.endOffset);
+
+        for (let i = 0; i < triggerLength; i++) {
+          (sel as any).modify?.('extend', 'backward', 'character');
+        }
+
+        const selected = sel.toString().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+        if (
+          selected.toLowerCase().endsWith(originalTrigger.toLowerCase()) ||
+          selected.length === triggerLength
+        ) {
+          replacedSuccessfully = document.execCommand('insertText', false, replacement);
+        }
+      } catch {
+        replacedSuccessfully = false;
+      }
+    }
+
+    // Notify framework via input event
+    if (replacedSuccessfully) {
+      try {
+        element.dispatchEvent(
+          new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertReplacementText',
+            data: replacement,
+          })
+        );
+      } catch {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } else {
+      // If replacement failed, do not return fake undo context
+      return null;
     }
 
     // Handle cursor positioning if requested
@@ -142,15 +246,12 @@ export class RichEditableAdapter {
       try {
         const curSel = window.getSelection();
         if (curSel && curSel.rangeCount > 0) {
-          // Adjust cursor backward if cursorOffset is less than replacement length
           const offsetFromEnd = replacement.length - resolved.cursorOffset;
           for (let i = 0; i < offsetFromEnd; i++) {
             (curSel as any).modify?.('move', 'backward', 'character');
           }
         }
-      } catch {
-        // Ignore cursor reposition failure
-      }
+      } catch {}
     }
 
     return {
