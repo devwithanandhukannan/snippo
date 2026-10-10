@@ -113,23 +113,45 @@
 
         <!-- Top Status & Actions Header -->
         <header class="sheet-header">
-          <div class="sheet-header-left">
-            <button class="btn-mobile-back" id="btn-mobile-back" title="Back to snippet list">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span>Snippets</span>
-            </button>
+          <div class="sheet-header-main">
+            <div class="sheet-header-left">
+              <button class="btn-mobile-back" id="btn-mobile-back" title="Back to snippet list">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Snippets</span>
+              </button>
 
-            <div class="sheet-category-badge">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-              <span>Text Expansion</span>
+              <div class="sheet-category-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <span>Text Expansion</span>
+              </div>
+            </div>
+
+            <div class="sheet-header-toggles">
+              <label class="switch-with-label" title="Enable or disable snippet">
+                <span class="text-xs text-muted">Active</span>
+                <label class="switch">
+                  <input type="checkbox" id="detail-enabled-switch" checked>
+                  <span class="slider"></span>
+                </label>
+              </label>
+
+              <!-- Explicit Delete Trash Button (Fixed UI Mistake: Clear Trash Can Icon) -->
+              <button class="btn-circle-action btn-delete-action" id="btn-delete-snippet" title="Delete this snippet">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="sheet-actions">
+          <div class="sheet-actions-group">
             <!-- Test Snippet Modal Button -->
             <button class="btn-action-pill btn-test-pill" id="btn-open-test-modal" title="Test snippet live in a modal">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -144,24 +166,6 @@
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               <span>Save</span>
-            </button>
-
-            <label class="switch-with-label" title="Enable or disable snippet">
-              <span class="text-xs text-muted">Active</span>
-              <label class="switch">
-                <input type="checkbox" id="detail-enabled-switch" checked>
-                <span class="slider"></span>
-              </label>
-            </label>
-
-            <!-- Explicit Delete Trash Button (Fixed UI Mistake: Clear Trash Can Icon) -->
-            <button class="btn-circle-action btn-delete-action" id="btn-delete-snippet" title="Delete this snippet">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
             </button>
           </div>
         </header>
@@ -496,8 +500,9 @@
   <!-- Guided Product Tour Overlay for First-Time Users -->
   <div class="tour-overlay" id="tour-overlay" style="display: none;">
     <div class="tour-card" id="tour-card">
+      <div class="tour-pointer-arrow" id="tour-pointer-arrow"></div>
       <div class="tour-card-header">
-        <div class="tour-badge">Product Tour • Step <span id="tour-step-num">1</span> of 4</div>
+        <div class="tour-badge"><span id="tour-step-icon">✨</span> Step <span id="tour-step-num">1</span> of 4</div>
         <button class="tour-close-btn" id="btn-tour-skip" title="Skip tour">✕</button>
       </div>
       <div class="tour-card-body">

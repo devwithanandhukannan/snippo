@@ -14,6 +14,7 @@ import { SnippetStore } from '../../data/store';
 
 interface TourStep {
   targetId?: string;
+  icon: string;
   title: string;
   description: string;
 }
@@ -36,24 +37,28 @@ class ManagerWorkspace {
   private currentTourStep = 0;
   private tourSteps: TourStep[] = [
     {
-      targetId: 'sidebar-snippet-list',
-      title: 'Snippet Library',
-      description: 'Here is your shortcut library. Browse, search, or filter snippets into categories. Click + New anytime to add a shortcut.',
+      targetId: 'btn-sidebar-new',
+      icon: '✨',
+      title: 'Create & Manage Snippets',
+      description: 'Tap "+ New" right here to add text expansions, or browse and search shortcuts in your library.',
     },
     {
-      targetId: 'section-configuration',
-      title: 'Trigger Shortcut',
-      description: 'This is the shorthand code you type anywhere on the web (e.g. /omw) to trigger instant text expansion.',
+      targetId: 'detail-trigger-input',
+      icon: '⚡',
+      title: 'Custom Trigger Shortcut',
+      description: 'Set your trigger keyword (e.g. /omw). Snippo listens for this keyword and expands it across any website.',
     },
     {
-      targetId: 'section-expansion',
-      title: 'Expansion Content & Smart Tags',
-      description: 'Type your message and click tags like {date}, {time}, or {cursor} to dynamically personalize your snippets.',
+      targetId: 'variables-toolbar',
+      icon: '🏷️',
+      title: 'Dynamic Variables Toolbar',
+      description: 'Click smart tags like +{date}, +{time}, or +{cursor} to inject dynamic timestamps and position your cursor.',
     },
     {
-      targetId: 'output-preview-container',
-      title: 'Live Preview & Test Studio',
-      description: 'Check how your expanded text will look below in real-time, or click "Test Snippet" to test expansion inside an interactive modal!',
+      targetId: 'btn-open-test-modal',
+      icon: '🚀',
+      title: 'Interactive Test Studio',
+      description: 'Click "Test Snippet" right here to pop open the test studio and practice typing your shortcut in real time!',
     },
   ];
 
@@ -400,6 +405,14 @@ class ManagerWorkspace {
     this.updateOutputPreview();
     this.updateLiveTestMatcher();
     window.location.hash = snippet.id;
+
+    // Trigger smooth bottom-to-top sheet pop up animation
+    const editor = document.getElementById('editor-view');
+    if (editor) {
+      editor.classList.remove('animate-sheet-up');
+      void editor.offsetWidth;
+      editor.classList.add('animate-sheet-up');
+    }
   }
 
   private createNewSnippet(prefillBody?: string): void {
@@ -573,6 +586,14 @@ class ManagerWorkspace {
     // Mobile Back Button
     document.getElementById('btn-mobile-back')?.addEventListener('click', () => {
       document.querySelector('.workspace-layout')?.classList.remove('mobile-editing');
+    });
+
+    // Close mobile sheet when tapping on backdrop outside sheet
+    const mainPane = document.getElementById('workspace-main-pane');
+    mainPane?.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && e.target === mainPane) {
+        document.querySelector('.workspace-layout')?.classList.remove('mobile-editing');
+      }
     });
 
     // Settings navigation
@@ -903,7 +924,7 @@ class ManagerWorkspace {
     this.testMatcher.updateIndex(index);
   }
 
-  // --- First-time Guided Onboarding Tour ---
+  // --- First-time Guided Onboarding Tour (Targeted Positioning & Spotlights) ---
 
   private setupOnboardingTour(): void {
     const overlay = document.getElementById('tour-overlay');
@@ -928,12 +949,19 @@ class ManagerWorkspace {
         this.endTour();
       }
     });
+
+    window.addEventListener('resize', () => {
+      if (overlay && overlay.style.display !== 'none') {
+        const step = this.tourSteps[this.currentTourStep];
+        this.positionTourCard(step?.targetId);
+      }
+    });
   }
 
   public startTour(): void {
     this.currentTourStep = 0;
     const overlay = document.getElementById('tour-overlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) overlay.style.display = 'block';
     this.renderTourStep();
   }
 
@@ -942,6 +970,7 @@ class ManagerWorkspace {
     if (!step) return;
 
     const numEl = document.getElementById('tour-step-num');
+    const iconEl = document.getElementById('tour-step-icon');
     const titleEl = document.getElementById('tour-title');
     const descEl = document.getElementById('tour-desc');
     const prevBtn = document.getElementById('btn-tour-prev');
@@ -949,6 +978,7 @@ class ManagerWorkspace {
     const dots = document.querySelectorAll('.tour-dot');
 
     if (numEl) numEl.textContent = String(this.currentTourStep + 1);
+    if (iconEl) iconEl.textContent = step.icon || '✨';
     if (titleEl) titleEl.textContent = step.title;
     if (descEl) descEl.textContent = step.description;
 
@@ -957,12 +987,100 @@ class ManagerWorkspace {
     }
 
     if (nextBtn) {
-      nextBtn.textContent = this.currentTourStep === this.tourSteps.length - 1 ? 'Get Started' : 'Next';
+      nextBtn.textContent = this.currentTourStep === this.tourSteps.length - 1 ? 'Got it!' : 'Next';
     }
 
     dots.forEach((dot, idx) => {
       dot.classList.toggle('active', idx === this.currentTourStep);
     });
+
+    // Position dynamically next to the target element with arrow and spotlight
+    setTimeout(() => {
+      this.positionTourCard(step.targetId);
+    }, 40);
+  }
+
+  private positionTourCard(targetId?: string): void {
+    const card = document.getElementById('tour-card');
+    const arrow = document.getElementById('tour-pointer-arrow');
+    if (!card) return;
+
+    // Remove previous spotlight highlights
+    document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
+      el.classList.remove('tour-target-spotlight');
+    });
+
+    if (!targetId) {
+      card.style.top = '50%';
+      card.style.left = '50%';
+      card.style.transform = 'translate(-50%, -50%)';
+      if (arrow) arrow.style.display = 'none';
+      return;
+    }
+
+    const targetEl = document.getElementById(targetId);
+    if (!targetEl) {
+      card.style.top = '50%';
+      card.style.left = '50%';
+      card.style.transform = 'translate(-50%, -50%)';
+      if (arrow) arrow.style.display = 'none';
+      return;
+    }
+
+    // Add glowing spotlight to target element
+    targetEl.classList.add('tour-target-spotlight');
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const rect = targetEl.getBoundingClientRect();
+    const cardWidth = Math.min(380, window.innerWidth - 32);
+    const cardHeight = card.offsetHeight || 190;
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      if (arrow) arrow.style.display = 'none';
+      card.style.left = '16px';
+      card.style.right = '16px';
+      card.style.width = 'calc(100vw - 32px)';
+      card.style.transform = 'none';
+
+      if (rect.bottom + cardHeight + 20 < window.innerHeight) {
+        card.style.top = `${rect.bottom + 12}px`;
+      } else {
+        card.style.top = `${Math.max(16, rect.top - cardHeight - 12)}px`;
+      }
+      return;
+    }
+
+    // Desktop positioning
+    if (arrow) arrow.style.display = 'block';
+    card.style.transform = 'none';
+    card.style.width = `${cardWidth}px`;
+
+    // Try placing below target
+    if (rect.bottom + cardHeight + 24 < window.innerHeight) {
+      const top = rect.bottom + 14;
+      const left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, rect.left));
+      card.style.top = `${top}px`;
+      card.style.left = `${left}px`;
+      if (arrow) {
+        arrow.className = 'tour-pointer-arrow arrow-top';
+        arrow.style.top = '-6px';
+        arrow.style.bottom = 'auto';
+        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, rect.left - left + rect.width / 2 - 6))}px`;
+      }
+    } else {
+      // Place above target
+      const top = Math.max(16, rect.top - cardHeight - 14);
+      const left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, rect.left));
+      card.style.top = `${top}px`;
+      card.style.left = `${left}px`;
+      if (arrow) {
+        arrow.className = 'tour-pointer-arrow arrow-bottom';
+        arrow.style.bottom = '-6px';
+        arrow.style.top = 'auto';
+        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, rect.left - left + rect.width / 2 - 6))}px`;
+      }
+    }
   }
 
   private nextTourStep(): void {
@@ -984,6 +1102,9 @@ class ManagerWorkspace {
   private endTour(): void {
     const overlay = document.getElementById('tour-overlay');
     if (overlay) overlay.style.display = 'none';
+    document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
+      el.classList.remove('tour-target-spotlight');
+    });
     try {
       localStorage.setItem('snippo_tour_seen', '1');
     } catch (e) {}
