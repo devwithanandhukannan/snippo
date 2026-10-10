@@ -20,11 +20,13 @@ class ManagerWorkspace {
   private undoTimer: any = null;
   private undoSecondsRemaining = 8;
   private testMatcher = new TriggerMatcher();
+  private customFolders = new Set<string>();
 
   public async init(): Promise<void> {
     await SnippetStore.init();
     this.settings = await SnippetStore.getSettings();
     this.snippets = await SnippetStore.getAllSnippets();
+    this.loadCustomFolders();
 
     this.renderVariablesToolbar();
     this.setupEventListeners();
@@ -49,6 +51,65 @@ class ManagerWorkspace {
     }
   }
 
+  // --- Category / Folder Management ---
+
+  private loadCustomFolders(): void {
+    try {
+      const raw = localStorage.getItem('verbatim_custom_folders');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          arr.forEach((f: string) => this.customFolders.add(f));
+        }
+      }
+    } catch (e) {}
+  }
+
+  private saveCustomFolders(): void {
+    try {
+      localStorage.setItem(
+        'verbatim_custom_folders',
+        JSON.stringify(Array.from(this.customFolders))
+      );
+    } catch (e) {}
+  }
+
+  public promptAddCategory(): void {
+    const input = prompt('Enter new category name:');
+    if (!input || !input.trim()) return;
+    const clean = input.trim();
+    this.customFolders.add(clean);
+    this.saveCustomFolders();
+    this.renderFolders();
+
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    if (folderSelect) {
+      folderSelect.value = clean;
+    }
+    const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
+    if (folderInput) {
+      folderInput.value = clean;
+    }
+    const folderChip = document.getElementById('detail-folder-chip');
+    if (folderChip) {
+      folderChip.textContent = clean;
+    }
+    const heroSubtitle = document.getElementById('card-hero-subtitle');
+    if (heroSubtitle) {
+      heroSubtitle.textContent = `${clean.toUpperCase()} • SNIPPET`;
+    }
+
+    if (this.selectedSnippetId) {
+      const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
+      if (current) {
+        current.folder = clean;
+        SnippetStore.saveSnippet(current).then(() => {
+          this.renderSnippetList();
+        });
+      }
+    }
+  }
+
   // --- Renderers ---
 
   private renderFolders(): void {
@@ -57,6 +118,8 @@ class ManagerWorkspace {
 
     // Discover unique folders
     const folderSet = new Set<string>();
+    ['General', 'Personal', 'Work', 'Fun'].forEach((f) => folderSet.add(f));
+    this.customFolders.forEach((f) => folderSet.add(f));
     this.snippets.forEach((s) => {
       if (s.folder) folderSet.add(s.folder);
     });
@@ -76,15 +139,45 @@ class ManagerWorkspace {
       nav.appendChild(tab);
     });
 
+    // Add "+" tab in sidebar folder navigation
+    const addTab = document.createElement('button');
+    addTab.className = 'folder-tab btn-folder-add-tab';
+    addTab.title = 'Add new category';
+    addTab.textContent = '+';
+    addTab.addEventListener('click', () => {
+      this.promptAddCategory();
+    });
+    nav.appendChild(addTab);
+
+    // Populate detail folder dropdown
+    const selectEl = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    if (selectEl) {
+      const prevVal = selectEl.value;
+      selectEl.innerHTML = '';
+      Array.from(folderSet)
+        .sort()
+        .forEach((f) => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          selectEl.appendChild(opt);
+        });
+      if (prevVal && folderSet.has(prevVal)) {
+        selectEl.value = prevVal;
+      }
+    }
+
     // Update folder datalist for input autocompletion
     const datalist = document.getElementById('folder-datalist');
     if (datalist) {
       datalist.innerHTML = '';
-      folders.filter((f) => f !== 'All').forEach((f) => {
-        const opt = document.createElement('option');
-        opt.value = f;
-        datalist.appendChild(opt);
-      });
+      folders
+        .filter((f) => f !== 'All')
+        .forEach((f) => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          datalist.appendChild(opt);
+        });
     }
   }
 
@@ -188,11 +281,18 @@ class ManagerWorkspace {
     const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
     const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    const folderChip = document.getElementById('detail-folder-chip');
+    const heroTitle = document.getElementById('card-hero-title');
+    const heroSubtitle = document.getElementById('card-hero-subtitle');
     const descInput = document.getElementById('detail-desc-input') as HTMLInputElement;
     const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
     const prefixDisplay = document.getElementById('trigger-prefix-display');
 
     if (triggerBadge) triggerBadge.textContent = snippet.trigger;
+    if (heroTitle) heroTitle.textContent = snippet.trigger;
+    if (heroSubtitle) heroSubtitle.textContent = `${(snippet.folder || 'GENERAL').toUpperCase()} • SNIPPET`;
+    if (folderChip) folderChip.textContent = snippet.folder || 'General';
     if (usageBadge) usageBadge.textContent = `${snippet.usageCount || 0} expansions`;
     if (enabledSwitch) enabledSwitch.checked = snippet.enabled;
 
@@ -206,7 +306,9 @@ class ManagerWorkspace {
       if (triggerInput) triggerInput.value = snippet.trigger;
     }
 
-    if (folderInput) folderInput.value = snippet.folder || 'General';
+    const folderVal = snippet.folder || 'General';
+    if (folderInput) folderInput.value = folderVal;
+    if (folderSelect) folderSelect.value = folderVal;
     if (descInput) descInput.value = snippet.description || '';
     if (bodyTextarea) bodyTextarea.value = snippet.body || '';
 
@@ -316,14 +418,34 @@ class ManagerWorkspace {
       this.restoreDeletedSnippet();
     });
 
-    // Trigger input live check
+    // Trigger input live check and hero title update
     document.getElementById('detail-trigger-input')?.addEventListener('input', () => {
       this.checkTriggerConflict();
       const triggerBadge = document.getElementById('detail-trigger-badge');
+      const heroTitle = document.getElementById('card-hero-title');
       const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
       const prefix = this.settings.triggerPrefix || '';
-      if (triggerBadge) triggerBadge.textContent = prefix + triggerInput.value.trim();
+      const full = prefix + triggerInput.value.trim();
+      if (triggerBadge) triggerBadge.textContent = full;
+      if (heroTitle) heroTitle.textContent = full || '/...';
       this.updateLiveTestMatcher();
+    });
+
+    // Folder select change
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    folderSelect?.addEventListener('change', () => {
+      const val = folderSelect.value;
+      const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
+      if (folderInput) folderInput.value = val;
+      const folderChip = document.getElementById('detail-folder-chip');
+      if (folderChip) folderChip.textContent = val;
+      const heroSubtitle = document.getElementById('card-hero-subtitle');
+      if (heroSubtitle) heroSubtitle.textContent = `${val.toUpperCase()} • SNIPPET`;
+    });
+
+    // Add Category button
+    document.getElementById('btn-add-category')?.addEventListener('click', () => {
+      this.promptAddCategory();
     });
 
     // Settings navigation
@@ -369,6 +491,7 @@ class ManagerWorkspace {
     if (!this.selectedSnippetId) return;
 
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
     const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
     const descInput = document.getElementById('detail-desc-input') as HTMLInputElement;
     const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
@@ -385,10 +508,12 @@ class ManagerWorkspace {
     const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
     if (!current) return;
 
+    const chosenFolder = (folderSelect ? folderSelect.value : folderInput?.value) || 'General';
+
     const updated: Snippet = {
       ...current,
       trigger: cleanTrigger,
-      folder: folderInput.value.trim() || 'General',
+      folder: chosenFolder.trim(),
       description: descInput.value.trim(),
       body: bodyTextarea.value,
       enabled: enabledSwitch.checked,

@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="workspace-layout">
-    <!-- Sidebar Left (Apple Notes / Settings pattern) -->
+    <!-- Sidebar Left -->
     <aside class="workspace-sidebar">
       <!-- Sidebar Header -->
       <div class="sidebar-header">
@@ -32,9 +32,9 @@
           </div>
           <span class="brand-title">snippo<span class="brand-slash">/</span></span>
         </div>
-        <!-- Primary Action (Fitts's Law) -->
+        <!-- Primary Action -->
         <button class="btn btn-primary btn-new-snippet" id="btn-sidebar-new">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <!-- Folders Navigation (Miller's Law) -->
+      <!-- Folders Navigation -->
       <div class="sidebar-folders" id="sidebar-folders-nav">
         <!-- Dynamically rendered folder tabs -->
       </div>
@@ -76,34 +76,66 @@
       </div>
     </aside>
 
-    <!-- Detail Pane Right -->
+    <!-- Detail Pane Right (Modern Apple / Image 2 Layout) -->
     <main class="workspace-main" id="workspace-main-pane">
       <!-- Editor View -->
       <section class="editor-view" id="editor-view">
-        <header class="editor-header">
-          <div class="editor-header-left">
-            <span class="badge-trigger large-trigger" id="detail-trigger-badge">/trigger</span>
-            <span class="badge-count" id="detail-usage-badge">0 expansions</span>
+        <!-- Top Sheet Pill Handle -->
+        <div class="card-sheet-handle" aria-hidden="true"></div>
+
+        <!-- Top Status & Actions Header -->
+        <header class="sheet-header">
+          <div class="sheet-category-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span>Text Expansion</span>
           </div>
-          <div class="editor-header-right">
-            <label class="switch-with-label" title="Enable or disable this snippet">
-              <span class="text-xs text-muted">Enabled</span>
+
+          <div class="sheet-actions">
+            <label class="switch-with-label" title="Enable or disable snippet">
+              <span class="text-xs text-muted">Active</span>
               <label class="switch">
                 <input type="checkbox" id="detail-enabled-switch" checked>
                 <span class="slider"></span>
               </label>
             </label>
-            <button class="btn btn-danger btn-sm" id="btn-delete-snippet" title="Delete this snippet">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+
+            <!-- Circular Close / Delete Button -->
+            <button class="btn-circle-action" id="btn-delete-snippet" title="Delete this snippet">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-              Delete
             </button>
           </div>
         </header>
 
-        <!-- Inline Conflict Warning (Error Prevention Principle) -->
+        <!-- Main Title & Metadata Badges (Like Image 2) -->
+        <div class="sheet-hero">
+          <h1 class="sheet-hero-title" id="card-hero-title">/trigger</h1>
+          <div class="sheet-hero-subtitle" id="card-hero-subtitle">GENERAL SNIPPET</div>
+          
+          <div class="sheet-meta-pills">
+            <span class="meta-pill">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Instant Trigger
+            </span>
+            <span class="meta-pill" id="detail-usage-badge">
+              0 expansions
+            </span>
+            <span class="meta-pill highlight-pill" id="detail-folder-chip">
+              General
+            </span>
+            <!-- Hidden original badge kept for manager.ts query safety -->
+            <span id="detail-trigger-badge" style="display: none;">/trigger</span>
+          </div>
+        </div>
+
+        <!-- Inline Conflict Warning Banner -->
         <div class="conflict-banner" id="conflict-warning-banner" style="display: none;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
@@ -113,70 +145,122 @@
           <span id="conflict-warning-text">Conflict detected with another trigger</span>
         </div>
 
-        <!-- Form fields -->
-        <div class="editor-body">
-          <div class="form-row-grid">
-            <!-- Trigger Input -->
-            <div class="field-group">
-              <label class="field-label" for="detail-trigger-input">Trigger</label>
-              <div class="input-prefix-box">
-                <span class="input-prefix-tag" id="trigger-prefix-display">/</span>
-                <input type="text" id="detail-trigger-input" class="field-input field-mono" placeholder="omw" autocomplete="off">
+        <!-- Section: Key Details (Cards side by side with zero borders) -->
+        <div class="sheet-section">
+          <div class="section-label">Configuration</div>
+          
+          <div class="cards-grid-2">
+            <!-- Trigger Card -->
+            <div class="soft-card">
+              <div class="soft-card-icon trigger-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="19" y1="5" x2="5" y2="19"></line>
+                </svg>
+              </div>
+              <div class="soft-card-body">
+                <label class="soft-card-title" for="detail-trigger-input">Trigger Shortcut</label>
+                <div class="input-prefix-box">
+                  <span class="input-prefix-tag" id="trigger-prefix-display">/</span>
+                  <input type="text" id="detail-trigger-input" class="field-input field-mono" placeholder="omw" autocomplete="off">
+                </div>
               </div>
             </div>
 
-            <!-- Folder Select / Add -->
-            <div class="field-group">
-              <label class="field-label" for="detail-folder-input">Folder</label>
-              <input type="text" id="detail-folder-input" class="field-input" placeholder="General" list="folder-datalist">
-              <datalist id="folder-datalist"></datalist>
-            </div>
-          </div>
-
-          <!-- Description / Label -->
-          <div class="field-group">
-            <label class="field-label" for="detail-desc-input">Description (Optional)</label>
-            <input type="text" id="detail-desc-input" class="field-input" placeholder="e.g. Quick on my way reply">
-          </div>
-
-          <!-- Expansion Body Textarea with Dynamic Variable Toolbar -->
-          <div class="field-group">
-            <div class="textarea-header">
-              <label class="field-label" for="detail-body-textarea">Expansion Body</label>
-              <span class="text-xs text-muted">Insert dynamic tags:</span>
-            </div>
-            
-            <!-- Dynamic Variable Chips Toolbar -->
-            <div class="variables-toolbar" id="variables-toolbar">
-              <!-- Dynamically populated from TemplateResolver -->
-            </div>
-
-            <textarea id="detail-body-textarea" class="field-textarea" rows="6" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
-          </div>
-
-          <!-- Interactive Live Test Zone (Peak-End Rule & Error Prevention) -->
-          <div class="live-test-card">
-            <div class="test-header">
-              <span class="test-title">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            <!-- Folder Dropdown with + Add Category Button -->
+            <div class="soft-card">
+              <div class="soft-card-icon folder-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Live Practice Field
-              </span>
-              <span class="text-xs text-muted">Type your trigger here to test expansion immediately</span>
+              </div>
+              <div class="soft-card-body">
+                <label class="soft-card-title" for="detail-folder-select">Category</label>
+                <div class="folder-control-row">
+                  <select id="detail-folder-select" class="folder-dropdown-select">
+                    <!-- Options populated by manager.ts -->
+                  </select>
+                  <button type="button" class="btn-add-folder-pill" id="btn-add-category" title="Add new category">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New</span>
+                  </button>
+                </div>
+                <input type="hidden" id="detail-folder-input" value="General">
+                <datalist id="folder-datalist"></datalist>
+              </div>
             </div>
-            <input type="text" id="live-test-field" class="field-input live-test-input" placeholder="Click and type your trigger to test live...">
-          </div>
-
-          <!-- Save status feedback bar -->
-          <div class="editor-footer">
-            <div class="save-status" id="save-status-msg">All changes saved locally</div>
-            <button class="btn btn-primary" id="btn-save-snippet">Save Snippet</button>
           </div>
         </div>
+
+        <!-- Section: Description -->
+        <div class="sheet-section">
+          <div class="soft-card full-width">
+            <div class="soft-card-icon desc-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="21" y1="6" x2="3" y2="6"></line>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+                <line x1="18" y1="18" x2="3" y2="18"></line>
+              </svg>
+            </div>
+            <div class="soft-card-body">
+              <label class="soft-card-title" for="detail-desc-input">Description (Optional)</label>
+              <input type="text" id="detail-desc-input" class="field-input" placeholder="e.g. Quick on my way reply">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Expansion Body -->
+        <div class="sheet-section">
+          <div class="section-label-row">
+            <span class="section-label">Expansion Content</span>
+            <span class="text-xs text-muted">Insert dynamic tags:</span>
+          </div>
+
+          <!-- Dynamic Variable Chips Toolbar -->
+          <div class="variables-toolbar" id="variables-toolbar"></div>
+
+          <div class="soft-card-textarea">
+            <textarea id="detail-body-textarea" class="field-textarea" rows="5" placeholder="Type text here... Use {date}, {time}, {cursor}, or {clipboard}"></textarea>
+          </div>
+        </div>
+
+        <!-- Section: Interactive Live Test Zone -->
+        <div class="sheet-section">
+          <div class="playground-card">
+            <div class="playground-header">
+              <span class="playground-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Instant Playground
+              </span>
+              <span class="text-xs text-muted">Test trigger live</span>
+            </div>
+            <input type="text" id="live-test-field" class="playground-input" placeholder="Type your trigger here to test expansion immediately...">
+          </div>
+        </div>
+
+        <!-- Bottom Action Banner (Like AsterCare / Add to Cart card in Image 2) -->
+        <footer class="sheet-action-card">
+          <div class="action-card-info">
+            <div class="action-card-status">
+              <span class="status-dot"></span>
+              <span id="save-status-msg">All changes saved locally</span>
+            </div>
+            <div class="action-card-note">Private on-device storage • 0 bytes synced</div>
+          </div>
+          <button class="btn-save-pill" id="btn-save-snippet">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Save Snippet
+          </button>
+        </footer>
       </section>
 
-      <!-- Settings View Pane (progressive disclosure) -->
+      <!-- Settings View Pane -->
       <section class="settings-view" id="settings-view" style="display: none;">
         <header class="settings-header">
           <h2>Settings & Preferences</h2>
@@ -184,7 +268,6 @@
         </header>
 
         <div class="settings-content">
-          <!-- Trigger Prefix Preference -->
           <div class="settings-card">
             <h3>Trigger Configuration</h3>
             <p class="text-sm text-muted">Choose your preferred shortcut prefix symbol for triggers.</p>
@@ -206,7 +289,6 @@
             </div>
           </div>
 
-          <!-- Site Exclusion Manager -->
           <div class="settings-card">
             <h3>Site Exclusions (Paused Websites)</h3>
             <p class="text-sm text-muted">Snippo will never listen or expand on these domains.</p>
@@ -214,12 +296,9 @@
               <input type="text" id="new-exclusion-input" class="field-input" placeholder="e.g. example.com">
               <button class="btn btn-secondary btn-sm" id="btn-add-exclusion">Add Domain</button>
             </div>
-            <div class="exclusion-list" id="exclusion-domains-list">
-              <!-- Dynamically populated -->
-            </div>
+            <div class="exclusion-list" id="exclusion-domains-list"></div>
           </div>
 
-          <!-- Backup & Restore -->
           <div class="settings-card">
             <h3>Backup & Restore (JSON)</h3>
             <p class="text-sm text-muted">Your data is stored 100% locally. Export backups or restore anytime.</p>
@@ -244,7 +323,6 @@
             </div>
           </div>
 
-          <!-- Privacy Guarantee -->
           <div class="settings-card privacy-callout">
             <h3 style="display: flex; align-items: center; gap: 8px;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
