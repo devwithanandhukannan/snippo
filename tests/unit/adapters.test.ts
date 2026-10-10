@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PlainInputAdapter } from '../../src/content/adapters/plain-input';
+import { RichEditableAdapter } from '../../src/content/adapters/rich-editable';
 import { EditorDetector } from '../../src/content/detector';
 import { isHostExcluded } from '../../src/utils/site-exclusion';
 
@@ -44,6 +45,32 @@ describe('PlainInputAdapter', () => {
     // Test undo
     PlainInputAdapter.undo(input, context);
     expect(input.value).toBe('Hey /omw');
+  });
+});
+
+describe('RichEditableAdapter', () => {
+  it('extracts tail text accurately and cleans invisible zero-width spaces', () => {
+    const textNode = {
+      nodeType: 3, // Node.TEXT_NODE
+      textContent: 'Hello\u200B /date',
+    };
+
+    const mockSelection = {
+      rangeCount: 1,
+      getRangeAt: () => ({
+        startContainer: textNode,
+        startOffset: 12,
+      }),
+    };
+
+    (globalThis as any).window = {
+      getSelection: () => mockSelection,
+    };
+    (globalThis as any).Node = { TEXT_NODE: 3 };
+
+    const container = {} as HTMLElement;
+    const tail = RichEditableAdapter.getTail(container, 10);
+    expect(tail).toBe('ello /date');
   });
 });
 

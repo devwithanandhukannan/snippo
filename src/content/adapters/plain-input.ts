@@ -22,6 +22,7 @@ export class PlainInputAdapter {
     const end = element.selectionEnd ?? element.value.length;
     const start = Math.max(0, end - triggerLength);
 
+    const oldValue = element.value;
     const replacement = resolved.text;
 
     // Use setRangeText to update value cleanly
@@ -38,12 +39,18 @@ export class PlainInputAdapter {
       element.setSelectionRange(targetPos, targetPos);
     }
 
+    // Sync React internal value tracker if present
+    const tracker = (element as any)._valueTracker;
+    if (tracker) {
+      tracker.setValue(oldValue);
+    }
+
     // Trigger synthetic input and change events for reactive frameworks
     try {
       const inputEvent = new InputEvent('input', {
         bubbles: true,
         cancelable: true,
-        inputType: 'insertReplacementText',
+        inputType: 'insertText',
         data: replacement,
       });
       element.dispatchEvent(inputEvent);
@@ -51,6 +58,20 @@ export class PlainInputAdapter {
       element.dispatchEvent(new Event('input', { bubbles: true }));
     }
     element.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Dismiss any dropdown popups
+    try {
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Escape',
+          code: 'Escape',
+          keyCode: 27,
+          which: 27,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    } catch {}
 
     return {
       id: 'undo-' + Date.now(),

@@ -18,10 +18,10 @@ export class RichEditableAdapter {
 
     // Strategy 1: Direct text node inspection if caret is in a TEXT_NODE
     if (range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.textContent) {
-      const text = range.startContainer.textContent;
+      const text = range.startContainer.textContent.replace(/\u00A0/g, ' ');
       const offset = range.startOffset;
-      const start = Math.max(0, offset - maxLen);
-      const tail = text.slice(start, offset);
+      const beforeCaret = text.slice(0, offset).replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+      const tail = beforeCaret.slice(Math.max(0, beforeCaret.length - maxLen));
       if (tail) return tail;
     }
 
@@ -30,7 +30,7 @@ export class RichEditableAdapter {
       const preCaretRange = range.cloneRange();
       preCaretRange.selectNodeContents(element);
       preCaretRange.setEnd(range.startContainer, range.startOffset);
-      const text = preCaretRange.toString();
+      const text = preCaretRange.toString().replace(/\u00A0/g, ' ').replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
       if (text) {
         return text.slice(Math.max(0, text.length - maxLen));
       }
@@ -40,7 +40,10 @@ export class RichEditableAdapter {
 
     // Strategy 3: Element innerText / textContent fallback
     try {
-      const full = (element.innerText || element.textContent || '').replace(/\r?\n$/, '');
+      const full = (element.innerText || element.textContent || '')
+        .replace(/\r?\n$/, '')
+        .replace(/\u00A0/g, ' ')
+        .replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
       if (full) {
         return full.slice(Math.max(0, full.length - maxLen));
       }
@@ -98,7 +101,7 @@ export class RichEditableAdapter {
       }
 
       if (textNode && textNode.textContent) {
-        const textContent = textNode.textContent;
+        const textContent = textNode.textContent.replace(/\u00A0/g, ' ');
         const beforeCaret = textContent.slice(0, caretOffset);
         const cleanBefore = beforeCaret.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
 
@@ -119,14 +122,7 @@ export class RichEditableAdapter {
           triggerRange.setStart(textNode, rawStartIndex);
           triggerRange.setEnd(textNode, caretOffset);
 
-          sel.removeAllRanges();
-          sel.addRange(triggerRange);
-
-          if (document.activeElement !== element && !element.contains(document.activeElement)) {
-            element.focus();
-          }
-
-          replacedSuccessfully = document.execCommand('insertText', false, replacement);
+          replacedSuccessfully = this.executeInsertion(element, triggerRange, replacement);
         }
       }
     } catch {
@@ -184,14 +180,7 @@ export class RichEditableAdapter {
             multiRange.setStart(startNode, startOffset);
             multiRange.setEnd(nodes[activeIndex].node, endContainerOffset);
 
-            sel.removeAllRanges();
-            sel.addRange(multiRange);
-
-            if (document.activeElement !== element && !element.contains(document.activeElement)) {
-              element.focus();
-            }
-
-            replacedSuccessfully = document.execCommand('insertText', false, replacement);
+            replacedSuccessfully = this.executeInsertion(element, multiRange, replacement);
           }
         }
       } catch {
@@ -210,33 +199,22 @@ export class RichEditableAdapter {
           (sel as any).modify?.('extend', 'backward', 'character');
         }
 
-        const selected = sel.toString().replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
+        const selected = sel.toString().replace(/[\u200B\u200C\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ');
         if (
           selected.toLowerCase().endsWith(originalTrigger.toLowerCase()) ||
           selected.length === triggerLength
         ) {
-          replacedSuccessfully = document.execCommand('insertText', false, replacement);
+          if (sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            replacedSuccessfully = this.executeInsertion(element, range, replacement);
+          }
         }
       } catch {
         replacedSuccessfully = false;
       }
     }
 
-    // Notify framework via input event
-    if (replacedSuccessfully) {
-      try {
-        element.dispatchEvent(
-          new InputEvent('input', {
-            bubbles: true,
-            cancelable: true,
-            inputType: 'insertReplacementText',
-            data: replacement,
-          })
-        );
-      } catch {
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    } else {
+    if (!replacedSuccessfully) {
       // If replacement failed, do not return fake undo context
       return null;
     }
@@ -317,5 +295,121 @@ export class RichEditableAdapter {
       y: elRect.top + 8,
       height: 20,
     };
+  }
+
+  /**
+   * Executes trigger deletion and snippet replacement with multi-engine framework compatibility.
+   * Works seamlessly with Lexical (WhatsApp Web), ProseMirror (Claude), Slate, Draft.js, and native DOM.
+   */
+  private static executeInsertion(
+    element: HTMLElement,
+    range: Range,
+    replacement: string
+  ): boolean {
+    const sel = window.getSelection();
+    if (!sel) return false;
+
+    // 1. Ensure the editable element has focus before setting selection
+    if (document.activeElement !== element && !element.contains(document.activeElement)) {
+      try {
+        element.focus();
+      } catch {}
+    }
+
+    // 2. Select the trigger range
+    try {
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch {
+      return false;
+    }
+
+    // 3. Notify framework of selection update synchronously
+    try {
+      document.dispatchEvent(new Event('selectionchange'));
+    } catch {}
+
+    let replaced = false;
+
+    // 4. Try native delete + insertText (framework-compatible for Lexical & ProseMirror)
+    try {
+      // In Lexical/Draft/ProseMirror, deleting the selected range first properly updates internal state
+      document.execCommand('delete', false);
+      replaced = document.execCommand('insertText', false, replacement);
+    } catch {
+      replaced = false;
+    }
+
+    // 5. Fallback: single insertText over selection
+    if (!replaced) {
+      try {
+        sel.removeAllRanges();
+        sel.addRange(range);
+        replaced = document.execCommand('insertText', false, replacement);
+      } catch {
+        replaced = false;
+      }
+    }
+
+    // 6. Hard DOM Fallback: range replacement + synthetic InputEvent
+    if (!replaced) {
+      try {
+        range.deleteContents();
+        const textNode = document.createTextNode(replacement);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        replaced = true;
+      } catch {
+        replaced = false;
+      }
+    }
+
+    // 7. Dispatch events so reactive frameworks (Lexical, React, Vue) capture changes
+    if (replaced) {
+      try {
+        element.dispatchEvent(
+          new InputEvent('beforeinput', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertText',
+            data: replacement,
+          })
+        );
+      } catch {}
+
+      try {
+        element.dispatchEvent(
+          new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertText',
+            data: replacement,
+          })
+        );
+      } catch {
+        try {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch {}
+      }
+
+      // 8. Dismiss slash-command/filter popups (e.g. Claude, Notion, Slack)
+      try {
+        element.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true,
+          })
+        );
+      } catch {}
+    }
+
+    return replaced;
   }
 }
