@@ -27,7 +27,10 @@ class PopupController {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.url) {
           const url = new URL(tab.url);
-          this.currentHostname = url.hostname;
+          // Only track hostname for standard web pages (exclude chrome-extension://, chrome://, etc.)
+          if (url.protocol === 'http:' || url.protocol === 'https:') {
+            this.currentHostname = url.hostname;
+          }
         }
       } catch {
         // Fallback or restricted url (chrome://)
@@ -41,12 +44,16 @@ class PopupController {
       const isExcluded = await SnippetStore.isDomainExcluded(this.currentHostname);
       if (toggleEl) toggleEl.checked = !isExcluded;
       if (siteStatusEl) {
-        siteStatusEl.textContent = isExcluded
+        siteStatusEl.textContent = isExcluded ? 'Paused' : 'Active';
+        siteStatusEl.title = isExcluded
           ? `Paused on ${this.currentHostname}`
           : `Active on ${this.currentHostname}`;
       }
     } else {
-      if (siteStatusEl) siteStatusEl.textContent = 'Active locally';
+      if (siteStatusEl) {
+        siteStatusEl.textContent = 'Active';
+        siteStatusEl.title = 'Active on this tab';
+      }
     }
   }
 
@@ -121,14 +128,19 @@ class PopupController {
     // Site toggle
     const toggle = document.getElementById('site-toggle') as HTMLInputElement;
     toggle?.addEventListener('change', async () => {
+      const isPaused = !toggle.checked;
+      const statusEl = document.getElementById('site-status-text');
       if (this.currentHostname) {
-        const isPaused = !toggle.checked;
         await SnippetStore.toggleDomainExclusion(this.currentHostname);
-        const statusEl = document.getElementById('site-status-text');
         if (statusEl) {
-          statusEl.textContent = isPaused
+          statusEl.textContent = isPaused ? 'Paused' : 'Active';
+          statusEl.title = isPaused
             ? `Paused on ${this.currentHostname}`
             : `Active on ${this.currentHostname}`;
+        }
+      } else {
+        if (statusEl) {
+          statusEl.textContent = isPaused ? 'Paused' : 'Active';
         }
       }
     });
