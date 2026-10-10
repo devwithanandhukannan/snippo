@@ -510,8 +510,20 @@
     <div class="tour-card" id="tour-card">
       <div class="tour-pointer-arrow" id="tour-pointer-arrow"></div>
       <div class="tour-card-header">
-        <div class="tour-badge"><span id="tour-step-icon">✨</span> Step <span id="tour-step-num">1</span> of 4</div>
-        <button class="tour-close-btn" id="btn-tour-skip" title="Skip tour">✕</button>
+        <div class="tour-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>Step <span id="tour-step-num">1</span> of 4</span>
+        </div>
+        <button class="tour-close-btn" id="btn-tour-skip" title="Skip tour">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <div class="tour-card-body">
         <h3 class="tour-title" id="tour-title">Snippet Library</h3>

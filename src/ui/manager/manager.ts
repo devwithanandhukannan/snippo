@@ -14,7 +14,6 @@ import { SnippetStore } from '../../data/store';
 
 interface TourStep {
   targetId?: string;
-  icon: string;
   title: string;
   description: string;
 }
@@ -38,25 +37,21 @@ class ManagerWorkspace {
   private tourSteps: TourStep[] = [
     {
       targetId: 'btn-sidebar-new',
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
       title: 'Create & Manage Snippets',
       description: 'Tap "+ New" right here to add text expansions, or browse and search shortcuts in your library.',
     },
     {
       targetId: 'detail-trigger-input',
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
       title: 'Custom Trigger Shortcut',
       description: 'Set your trigger keyword (e.g. /omw). Snippo listens for this keyword and expands it across any website.',
     },
     {
       targetId: 'variables-toolbar',
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,
       title: 'Dynamic Variables Toolbar',
       description: 'Click smart tags like +{date}, +{time}, +{day}, or +{year} to inject dynamic timestamps and formatting.',
     },
     {
       targetId: 'btn-open-test-modal',
-      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
       title: 'Interactive Test Studio',
       description: 'Click "Test Snippet" right here to pop open the test studio and practice typing your shortcut in real time!',
     },
@@ -970,6 +965,14 @@ class ManagerWorkspace {
     const prevBtn = document.getElementById('btn-tour-prev');
     const skipBtn = document.getElementById('btn-tour-skip');
 
+    const dots = document.querySelectorAll('.tour-dot');
+    dots.forEach((dot, idx) => {
+      dot.addEventListener('click', () => {
+        this.currentTourStep = idx;
+        this.renderTourStep();
+      });
+    });
+
     nextBtn?.addEventListener('click', () => {
       this.nextTourStep();
     });
@@ -998,17 +1001,41 @@ class ManagerWorkspace {
 
   public startTour(): void {
     this.currentTourStep = 0;
+    this.showEditorView();
+
+    // Ensure a snippet is selected so editor fields are visible and populated
+    if (!this.selectedSnippetId && this.snippets.length > 0) {
+      this.selectSnippet(this.snippets[0].id);
+    } else if (this.snippets.length === 0) {
+      this.createNewSnippet();
+    }
+
+    document.body.classList.add('tour-active');
     const overlay = document.getElementById('tour-overlay');
     if (overlay) overlay.style.display = 'block';
-    this.renderTourStep();
+
+    requestAnimationFrame(() => {
+      this.renderTourStep();
+    });
   }
 
   private renderTourStep(): void {
     const step = this.tourSteps[this.currentTourStep];
     if (!step) return;
 
+    this.showEditorView();
+
+    const isMobile = window.innerWidth <= 768;
+    const layout = document.querySelector('.workspace-layout');
+    if (isMobile && layout) {
+      if (this.currentTourStep === 0) {
+        layout.classList.remove('mobile-editing');
+      } else {
+        layout.classList.add('mobile-editing');
+      }
+    }
+
     const numEl = document.getElementById('tour-step-num');
-    const iconEl = document.getElementById('tour-step-icon');
     const titleEl = document.getElementById('tour-title');
     const descEl = document.getElementById('tour-desc');
     const prevBtn = document.getElementById('btn-tour-prev');
@@ -1016,7 +1043,6 @@ class ManagerWorkspace {
     const dots = document.querySelectorAll('.tour-dot');
 
     if (numEl) numEl.textContent = String(this.currentTourStep + 1);
-    if (iconEl) iconEl.innerHTML = step.icon || '';
     if (titleEl) titleEl.textContent = step.title;
     if (descEl) descEl.textContent = step.description;
 
@@ -1035,7 +1061,7 @@ class ManagerWorkspace {
     // Position dynamically next to the target element with arrow and spotlight
     setTimeout(() => {
       this.positionTourCard(step.targetId);
-    }, 40);
+    }, 60);
   }
 
   private positionTourCard(targetId?: string): void {
@@ -1067,19 +1093,21 @@ class ManagerWorkspace {
 
     // Add glowing spotlight to target element
     targetEl.classList.add('tour-target-spotlight');
-    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
 
     const rect = targetEl.getBoundingClientRect();
-    const cardWidth = Math.min(380, window.innerWidth - 32);
-    const cardHeight = card.offsetHeight || 190;
     const isMobile = window.innerWidth <= 768;
+    const cardWidth = Math.min(360, window.innerWidth - 32);
+
+    card.style.width = `${cardWidth}px`;
+    card.style.transform = 'none';
+
+    const cardHeight = card.offsetHeight || 180;
 
     if (isMobile) {
       if (arrow) arrow.style.display = 'none';
       card.style.left = '16px';
       card.style.right = '16px';
-      card.style.width = 'calc(100vw - 32px)';
-      card.style.transform = 'none';
 
       if (rect.bottom + cardHeight + 20 < window.innerHeight) {
         card.style.top = `${rect.bottom + 12}px`;
@@ -1091,32 +1119,38 @@ class ManagerWorkspace {
 
     // Desktop positioning
     if (arrow) arrow.style.display = 'block';
-    card.style.transform = 'none';
-    card.style.width = `${cardWidth}px`;
+
+    const targetCenterX = rect.left + rect.width / 2;
+    // Align card horizontally centered over target, clamped to screen bounds
+    let left = targetCenterX - cardWidth / 2;
+    if (left < 20) left = 20;
+    if (left + cardWidth > window.innerWidth - 20) {
+      left = window.innerWidth - cardWidth - 20;
+    }
 
     // Try placing below target
     if (rect.bottom + cardHeight + 24 < window.innerHeight) {
       const top = rect.bottom + 14;
-      const left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, rect.left));
       card.style.top = `${top}px`;
       card.style.left = `${left}px`;
       if (arrow) {
         arrow.className = 'tour-pointer-arrow arrow-top';
         arrow.style.top = '-6px';
         arrow.style.bottom = 'auto';
-        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, rect.left - left + rect.width / 2 - 6))}px`;
+        const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
+        arrow.style.left = `${arrowLeft}px`;
       }
     } else {
       // Place above target
       const top = Math.max(16, rect.top - cardHeight - 14);
-      const left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, rect.left));
       card.style.top = `${top}px`;
       card.style.left = `${left}px`;
       if (arrow) {
         arrow.className = 'tour-pointer-arrow arrow-bottom';
         arrow.style.bottom = '-6px';
         arrow.style.top = 'auto';
-        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, rect.left - left + rect.width / 2 - 6))}px`;
+        const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
+        arrow.style.left = `${arrowLeft}px`;
       }
     }
   }
@@ -1138,6 +1172,7 @@ class ManagerWorkspace {
   }
 
   private endTour(): void {
+    document.body.classList.remove('tour-active');
     const overlay = document.getElementById('tour-overlay');
     if (overlay) overlay.style.display = 'none';
     document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
