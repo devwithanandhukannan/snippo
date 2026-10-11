@@ -25,53 +25,105 @@ export class PlainInputAdapter {
     const oldValue = element.value;
     const replacement = resolved.text;
 
-    // Use setRangeText to update value cleanly
-    if (typeof element.setRangeText === 'function') {
-      element.setRangeText(replacement, start, end, 'end');
-    } else {
-      element.value = element.value.slice(0, start) + replacement + element.value.slice(end);
-      element.selectionStart = element.selectionEnd = start + replacement.length;
+    if (typeof document !== 'undefined' && document.activeElement !== element) {
+      try {
+        element.focus();
+      } catch {}
     }
 
-    // Adjust cursor position if cursorOffset is specified
-    if (resolved.cursorOffset !== undefined) {
-      const targetPos = start + resolved.cursorOffset;
-      element.setSelectionRange(targetPos, targetPos);
-    }
+    let replaced = false;
 
-    // Sync React internal value tracker if present
-    const tracker = (element as any)._valueTracker;
-    if (tracker) {
-      tracker.setValue(oldValue);
-    }
-
-    // Trigger synthetic input and change events for reactive frameworks
+    // Strategy 1: Native execCommand('insertText') for full framework & undo compatibility
     try {
-      const inputEvent = new InputEvent('input', {
-        bubbles: true,
-        cancelable: true,
-        inputType: 'insertText',
-        data: replacement,
-      });
-      element.dispatchEvent(inputEvent);
+      if (
+        typeof document !== 'undefined' &&
+        typeof element.setSelectionRange === 'function' &&
+        typeof document.execCommand === 'function'
+      ) {
+        element.setSelectionRange(start, end);
+        replaced = document.execCommand('insertText', false, replacement);
+      }
     } catch {
-      element.dispatchEvent(new Event('input', { bubbles: true }));
+      replaced = false;
     }
-    element.dispatchEvent(new Event('change', { bubbles: true }));
 
-    // Dismiss any dropdown popups
-    try {
-      element.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'Escape',
-          code: 'Escape',
-          keyCode: 27,
-          which: 27,
-          bubbles: true,
-          cancelable: true,
-        })
-      );
-    } catch {}
+    // Strategy 2: Programmatic value setting fallback (React / Vue / plain HTML)
+    if (!replaced || element.value === oldValue) {
+      if (typeof element.setRangeText === 'function') {
+        element.setRangeText(replacement, start, end, 'end');
+      } else {
+        element.value = element.value.slice(0, start) + replacement + element.value.slice(end);
+      }
+
+      const isTextArea =
+        typeof HTMLTextAreaElement !== 'undefined'
+          ? element instanceof HTMLTextAreaElement
+          : (element as any)?.tagName?.toUpperCase() === 'TEXTAREA';
+
+      const proto = isTextArea
+        ? typeof HTMLTextAreaElement !== 'undefined'
+          ? HTMLTextAreaElement.prototype
+          : Object.getPrototypeOf(element)
+        : typeof HTMLInputElement !== 'undefined'
+        ? HTMLInputElement.prototype
+        : Object.getPrototypeOf(element);
+
+      const nativeValueSetter = proto
+        ? Object.getOwnPropertyDescriptor(proto, 'value')?.set
+        : undefined;
+
+      // Sync React internal value tracker if present
+      const tracker = (element as any)._valueTracker;
+      if (tracker) {
+        tracker.setValue(oldValue);
+      }
+
+      if (nativeValueSetter) {
+        nativeValueSetter.call(element, element.value);
+      }
+
+      const targetPos =
+        resolved.cursorOffset !== undefined
+          ? start + resolved.cursorOffset
+          : start + replacement.length;
+      if (typeof element.setSelectionRange === 'function') {
+        element.setSelectionRange(targetPos, targetPos);
+      }
+
+      // Trigger synthetic input and change events for reactive frameworks
+      try {
+        if (typeof InputEvent !== 'undefined') {
+          const inputEvent = new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertReplacementText',
+            data: replacement,
+          });
+          element.dispatchEvent(inputEvent);
+        } else if (typeof Event !== 'undefined') {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } catch {
+        try {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch {}
+      }
+
+      try {
+        if (typeof Event !== 'undefined') {
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } catch {}
+    } else {
+      // execCommand succeeded - handle custom cursor offset if specified
+      if (resolved.cursorOffset !== undefined && typeof element.setSelectionRange === 'function') {
+        const targetPos = start + resolved.cursorOffset;
+        element.setSelectionRange(targetPos, targetPos);
+      }
+    }
+
+    // Note: Never dispatch synthetic 'Escape' key events! Firing Escape causes
+    // search bars (like Pinterest) to clear the query or close search dropdowns.
 
     return {
       id: 'undo-' + Date.now(),
@@ -93,18 +145,71 @@ export class PlainInputAdapter {
     context: ExpansionUndoContext
   ): void {
     const { startOffset, endOffset, originalTriggerText } = context.restoreData;
-    if (typeof element.setRangeText === 'function') {
-      element.setRangeText(originalTriggerText, startOffset, endOffset, 'end');
-    } else {
-      element.value =
-        element.value.slice(0, startOffset) +
-        originalTriggerText +
-        element.value.slice(endOffset);
-      element.selectionStart = element.selectionEnd = startOffset + originalTriggerText.length;
+
+    if (typeof document !== 'undefined' && document.activeElement !== element) {
+      try {
+        element.focus();
+      } catch {}
     }
 
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
+    let undone = false;
+    try {
+      if (typeof document !== 'undefined' && typeof document.execCommand === 'function') {
+        undone = document.execCommand('undo');
+      }
+    } catch {
+      undone = false;
+    }
+
+    if (!undone) {
+      if (typeof element.setRangeText === 'function') {
+        element.setRangeText(originalTriggerText, startOffset, endOffset, 'end');
+      } else {
+        element.value =
+          element.value.slice(0, startOffset) +
+          originalTriggerText +
+          element.value.slice(endOffset);
+        if (typeof element.setSelectionRange === 'function') {
+          element.setSelectionRange(
+            startOffset + originalTriggerText.length,
+            startOffset + originalTriggerText.length
+          );
+        }
+      }
+
+      const isTextArea =
+        typeof HTMLTextAreaElement !== 'undefined'
+          ? element instanceof HTMLTextAreaElement
+          : (element as any)?.tagName?.toUpperCase() === 'TEXTAREA';
+
+      const proto = isTextArea
+        ? typeof HTMLTextAreaElement !== 'undefined'
+          ? HTMLTextAreaElement.prototype
+          : Object.getPrototypeOf(element)
+        : typeof HTMLInputElement !== 'undefined'
+        ? HTMLInputElement.prototype
+        : Object.getPrototypeOf(element);
+
+      const nativeValueSetter = proto
+        ? Object.getOwnPropertyDescriptor(proto, 'value')?.set
+        : undefined;
+
+      const tracker = (element as any)._valueTracker;
+      if (tracker) {
+        tracker.setValue(context.expandedText);
+      }
+
+      if (nativeValueSetter) {
+        nativeValueSetter.call(element, element.value);
+      }
+
+      try {
+        if (typeof Event !== 'undefined') {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } catch {}
+    }
   }
 
   public static getCaretCoordinates(

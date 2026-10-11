@@ -55,10 +55,25 @@ export class EditorDetector {
   /**
    * Resolves the active editor element and its classification.
    */
-  public static detectCurrentEditor(): {
+  public static detectCurrentEditor(target?: Element | null): {
     element: HTMLElement | null;
     type: EditorType;
   } {
+    // 1. Direct check on event target if provided (handles search inputs, comboboxes, etc.)
+    const directEl = target as HTMLElement | null;
+    if (directEl && !this.isSkipListElement(directEl)) {
+      if (directEl instanceof HTMLInputElement || directEl instanceof HTMLTextAreaElement) {
+        return { element: directEl, type: 'plain-input' };
+      }
+      if (directEl.isContentEditable || directEl.getAttribute('contenteditable') === 'true') {
+        return { element: directEl, type: 'rich-editable' };
+      }
+      const editableAncestor = directEl.closest?.('[contenteditable="true"]') as HTMLElement | null;
+      if (editableAncestor && !this.isSkipListElement(editableAncestor)) {
+        return { element: editableAncestor, type: 'rich-editable' };
+      }
+    }
+
     const active = ShadowDomAdapter.getDeepActiveElement() as HTMLElement | null;
 
     if (!active || this.isSkipListElement(active)) {

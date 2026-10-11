@@ -362,53 +362,31 @@ export class RichEditableAdapter {
         sel.removeAllRanges();
         sel.addRange(range);
         replaced = true;
+
+        // Only dispatch synthetic input event if execCommand failed and raw DOM manipulation was needed
+        try {
+          element.dispatchEvent(
+            new InputEvent('input', {
+              bubbles: true,
+              cancelable: true,
+              inputType: 'insertReplacementText',
+              data: replacement,
+            })
+          );
+        } catch {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       } catch {
         replaced = false;
       }
     }
 
-    // 7. Dispatch events so reactive frameworks (Lexical, React, Vue) capture changes
-    if (replaced) {
-      try {
-        element.dispatchEvent(
-          new InputEvent('beforeinput', {
-            bubbles: true,
-            cancelable: true,
-            inputType: 'insertText',
-            data: replacement,
-          })
-        );
-      } catch {}
-
-      try {
-        element.dispatchEvent(
-          new InputEvent('input', {
-            bubbles: true,
-            cancelable: true,
-            inputType: 'insertText',
-            data: replacement,
-          })
-        );
-      } catch {
-        try {
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-        } catch {}
-      }
-
-      // 8. Dismiss slash-command/filter popups (e.g. Claude, Notion, Slack)
-      try {
-        element.dispatchEvent(
-          new KeyboardEvent('keydown', {
-            key: 'Escape',
-            code: 'Escape',
-            keyCode: 27,
-            which: 27,
-            bubbles: true,
-            cancelable: true,
-          })
-        );
-      } catch {}
-    }
+    // Note:
+    // 1. Never dispatch synthetic 'beforeinput' or 'input' events when execCommand succeeded!
+    //    execCommand('insertText') natively fires browser beforeinput and input events.
+    //    Dispatching synthetic events causes Lexical (WhatsApp Web) to duplicate the inserted text 3 times.
+    // 2. Never dispatch synthetic 'Escape' key events! In WhatsApp Web, Escape closes the active chat
+    //    and redirects to the "Voice and video calling is now available" screen.
 
     return replaced;
   }

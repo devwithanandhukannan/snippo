@@ -83,8 +83,8 @@ class VerbatimContentScript {
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
-    // 1. Esc key checks undo first
-    if (e.key === 'Escape' && ExpansionUndoManager.canUndo()) {
+    // 1. Esc key checks undo first (only for trusted user keystrokes)
+    if (e.key === 'Escape' && e.isTrusted && ExpansionUndoManager.canUndo()) {
       e.stopPropagation();
       e.preventDefault();
       ExpansionUndoManager.undo();
@@ -101,7 +101,7 @@ class VerbatimContentScript {
     // Quick gate check: skip composition events (e.g. CJK IME in progress)
     if ((e as InputEvent).isComposing) return;
 
-    const { element, type } = EditorDetector.detectCurrentEditor();
+    const { element, type } = EditorDetector.detectCurrentEditor(e.target as Element);
     if (!element || type === 'unsupported') return;
 
     // Fast tail retrieval (< 0.05ms)
@@ -156,7 +156,6 @@ class VerbatimContentScript {
       }
 
       if (undoCtx) {
-        this.lastExpandedAt = Date.now();
         ExpansionUndoManager.record(undoCtx, element);
 
         if (this.settings?.showChip !== false) {
@@ -171,6 +170,7 @@ class VerbatimContentScript {
     } catch {
       // Catch disconnected port gracefully
     } finally {
+      this.lastExpandedAt = Date.now();
       setTimeout(() => {
         this.isExpanding = false;
       }, 150);
