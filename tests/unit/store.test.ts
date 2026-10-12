@@ -91,4 +91,20 @@ describe('SnippetStore', () => {
     expect(revertedState).toBe(false);
     expect(await SnippetStore.isDomainExcluded(domain)).toBe(false);
   });
+
+  it('updates and persists settings enabled state', async () => {
+    await SnippetStore.init();
+    const initialSettings = await SnippetStore.getSettings();
+    expect(initialSettings.enabled).toBe(true);
+
+    const updated = await SnippetStore.updateSettings({ enabled: false });
+    expect(updated.enabled).toBe(false);
+
+    const reloaded = await SnippetStore.getSettings();
+    expect(reloaded.enabled).toBe(false);
+
+    await SnippetStore.updateSettings({ enabled: true });
+    expect((await SnippetStore.getSettings()).enabled).toBe(true);
+  });
 });
+

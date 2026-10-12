@@ -302,7 +302,7 @@ h1, h2, h3, h4 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--border-subtle);
+  background-color: #EF4444;
   transition: var(--dur-base) var(--ease-spring);
   border-radius: var(--radius-full);
 }
@@ -320,8 +320,12 @@ h1, h2, h3, h4 {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
+input:not(:checked) + .slider {
+  background-color: #EF4444;
+}
+
 input:checked + .slider {
-  background-color: var(--color-brand-green);
+  background-color: var(--color-brand-green, #10B981);
 }
 
 input:checked + .slider:before {

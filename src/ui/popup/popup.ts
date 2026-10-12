@@ -18,7 +18,6 @@ class PopupController {
     await this.resolveCurrentTab();
     await this.loadData();
     this.bindEvents();
-    this.setupPracticeInput();
   }
 
   private async resolveCurrentTab(): Promise<void> {
@@ -40,20 +39,21 @@ class PopupController {
     const siteStatusEl = document.getElementById('site-status-text');
     const toggleEl = document.getElementById('site-toggle') as HTMLInputElement;
 
+    const settings = await SnippetStore.getSettings();
+    const isGloballyDisabled = settings.enabled === false;
+    let isPaused = isGloballyDisabled;
+
     if (this.currentHostname) {
       const isExcluded = await SnippetStore.isDomainExcluded(this.currentHostname);
-      if (toggleEl) toggleEl.checked = !isExcluded;
-      if (siteStatusEl) {
-        siteStatusEl.textContent = isExcluded ? 'Paused' : 'Active';
-        siteStatusEl.title = isExcluded
-          ? `Paused on ${this.currentHostname}`
-          : `Active on ${this.currentHostname}`;
-      }
-    } else {
-      if (siteStatusEl) {
-        siteStatusEl.textContent = 'Active';
-        siteStatusEl.title = 'Active on this tab';
-      }
+      isPaused = isGloballyDisabled || isExcluded;
+    }
+
+    if (toggleEl) toggleEl.checked = !isPaused;
+    if (siteStatusEl) {
+      siteStatusEl.textContent = isPaused ? 'Paused' : 'Active';
+      siteStatusEl.title = isPaused
+        ? (this.currentHostname ? `Paused on ${this.currentHostname}` : 'Paused')
+        : (this.currentHostname ? `Active on ${this.currentHostname}` : 'Active');
     }
   }
 
@@ -130,18 +130,51 @@ class PopupController {
     toggle?.addEventListener('change', async () => {
       const isPaused = !toggle.checked;
       const statusEl = document.getElementById('site-status-text');
-      if (this.currentHostname) {
-        await SnippetStore.toggleDomainExclusion(this.currentHostname);
-        if (statusEl) {
-          statusEl.textContent = isPaused ? 'Paused' : 'Active';
+
+      if (isPaused) {
+        // Paused: disable globally and exclude domain if present
+        if (this.currentHostname) {
+          const isExcluded = await SnippetStore.isDomainExcluded(this.currentHostname);
+          if (!isExcluded) {
+            await SnippetStore.toggleDomainExclusion(this.currentHostname);
+          }
+        }
+        await SnippetStore.updateSettings({ enabled: false });
+      } else {
+        // Active: enable globally and remove exclusion if present
+        await SnippetStore.updateSettings({ enabled: true });
+        if (this.currentHostname) {
+          const isExcluded = await SnippetStore.isDomainExcluded(this.currentHostname);
+          if (isExcluded) {
+            await SnippetStore.toggleDomainExclusion(this.currentHostname);
+          }
+        }
+      }
+
+      if (statusEl) {
+        statusEl.textContent = isPaused ? 'Paused' : 'Active';
+        if (this.currentHostname) {
           statusEl.title = isPaused
             ? `Paused on ${this.currentHostname}`
             : `Active on ${this.currentHostname}`;
         }
-      } else {
-        if (statusEl) {
-          statusEl.textContent = isPaused ? 'Paused' : 'Active';
+      }
+
+      // Broadcast update to worker and all active tabs
+      try {
+        if (typeof chrome !== 'undefined') {
+          chrome.runtime?.sendMessage?.({ type: 'SETTINGS_UPDATED' }).catch?.(() => {});
+          if (chrome.tabs?.query) {
+            const tabs = await chrome.tabs.query({});
+            for (const t of tabs) {
+              if (t.id) {
+                chrome.tabs.sendMessage(t.id, { type: 'SETTINGS_UPDATED' }).catch(() => {});
+              }
+            }
+          }
         }
+      } catch {
+        // Ignore communication errors
       }
     });
 
@@ -153,25 +186,6 @@ class PopupController {
     // Open Manager
     document.getElementById('btn-open-manager')?.addEventListener('click', () => {
       this.openManager();
-    });
-  }
-
-  private setupPracticeInput(): void {
-    const input = document.getElementById('quick-test-input') as HTMLInputElement;
-    if (!input) return;
-
-    input.addEventListener('input', () => {
-      const val = input.value;
-      const match = this.matcher.matchTail(val);
-      if (match) {
-        const snip = this.snippets.find((s) => s.id === match.snippetId);
-        if (snip) {
-          const resolved = TemplateResolver.resolve(snip.body);
-          const start = val.length - match.tailLength;
-          input.value = val.slice(0, start) + resolved.text;
-          input.setSelectionRange(input.value.length, input.value.length);
-        }
-      }
     });
   }
 

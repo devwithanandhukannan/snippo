@@ -169,6 +169,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'EXPAND_TRIGGER': {
+          const settings = await SnippetStore.getSettings();
+          if (settings.enabled === false) {
+            sendResponse({ success: false, error: 'Snippo is currently paused' });
+            break;
+          }
           const { snippetId } = payload || {};
           const snippet = await SnippetStore.getSnippetById(snippetId);
           if (snippet) {
@@ -223,6 +228,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'SNIPPETS_UPDATED': {
           broadcastUpdate('SNIPPETS_UPDATED');
+          sendResponse({ success: true });
+          break;
+        }
+
+        case 'SETTINGS_UPDATED': {
+          broadcastUpdate('SETTINGS_UPDATED');
           sendResponse({ success: true });
           break;
         }
