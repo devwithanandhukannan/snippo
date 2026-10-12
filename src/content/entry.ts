@@ -52,8 +52,10 @@ class VerbatimContentScript {
         );
       }
 
-      if (this.isExcluded) {
-        return; // Don't fetch triggers if domain is excluded
+      const isPaused = this.isExcluded || this.settings?.enabled === false;
+      if (isPaused) {
+        this.matcher.updateIndex({}); // Clear triggers completely so nothing can expand
+        return;
       }
 
       const indexRes: any = await this.sendMessagePromise('GET_TRIGGER_INDEX');
@@ -72,17 +74,29 @@ class VerbatimContentScript {
   }
 
   private listenForBroadcasts(): void {
-    if (typeof chrome === 'undefined' || !chrome.runtime?.onMessage) return;
+    if (typeof chrome === 'undefined') return;
 
-    chrome.runtime.onMessage.addListener((message) => {
-      if (message?.type === 'SNIPPETS_UPDATED' || message?.type === 'SETTINGS_UPDATED') {
-        this.syncState();
-      }
-      return false;
-    });
+    if (chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message?.type === 'SNIPPETS_UPDATED' || message?.type === 'SETTINGS_UPDATED') {
+          this.syncState();
+        }
+        return false;
+      });
+    }
+
+    if (chrome.storage?.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && (changes['verbatim_settings_v1'] || changes['verbatim_trigger_index_v1'])) {
+          this.syncState();
+        }
+      });
+    }
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
+    if (this.isExcluded || this.settings?.enabled === false) return;
+
     // 1. Esc key checks undo first (only for trusted user keystrokes)
     if (e.key === 'Escape' && e.isTrusted && ExpansionUndoManager.canUndo()) {
       e.stopPropagation();
@@ -94,7 +108,7 @@ class VerbatimContentScript {
   };
 
   private handleInput = async (e: Event): Promise<void> => {
-    if (this.isExcluded) return;
+    if (this.isExcluded || this.settings?.enabled === false) return;
     if (this.isExpanding || Date.now() - this.lastExpandedAt < 400) return;
     if (typeof chrome === 'undefined' || !chrome.runtime?.id) return;
 

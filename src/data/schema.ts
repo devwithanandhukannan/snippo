@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   excludedDomains: ['bankofamerica.com', 'chase.com', 'wellsfargo.com'],
   theme: 'system',
   confirmOnDelete: true,
+  enabled: true,
   schemaVersion: CURRENT_SCHEMA_VERSION,
 };
 

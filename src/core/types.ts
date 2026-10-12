@@ -37,6 +37,7 @@ export interface Settings {
   excludedDomains: string[];
   theme: 'system' | 'light' | 'dark';
   confirmOnDelete?: boolean;
+  enabled?: boolean;
   schemaVersion: number;
 }
 

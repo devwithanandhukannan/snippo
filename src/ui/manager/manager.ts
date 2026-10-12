@@ -1,8 +1,9 @@
 /**
  * Snippo Manager Workspace Controller
- * Apple minimalist design system implementation.
- * Zero-borders, interactive test studio modal, live output preview,
- * transient save toast notification, 2-column settings grid, and guided onboarding tour.
+ * Modern Minimalist Design System implementation.
+ * Responsive cards grid, mobile-style bottom-to-top sheet modal,
+ * Tab-to-expansion keyboard navigation, custom category dialogs,
+ * interactive test studio modal, and guided onboarding tour.
  */
 
 import { ConflictDetector } from '../../core/conflicts';
@@ -22,6 +23,7 @@ class ManagerWorkspace {
   private snippets: Snippet[] = [];
   private settings!: Settings;
   private selectedSnippetId: string | null = null;
+  private isEditingExisting = false;
   private activeFolder = 'All';
   private searchQuery = '';
   private deletedSnippetStack: Snippet[] = [];
@@ -31,7 +33,6 @@ class ManagerWorkspace {
   private customFolders = new Set<string>();
   private deletedDefaultFolders = new Set<string>();
   private categoryPendingDelete = '';
-  private isSidebarCollapsed = false;
   private saveToastTimer = null as any;
 
   // Onboarding Tour state
@@ -39,23 +40,23 @@ class ManagerWorkspace {
   private tourSteps: TourStep[] = [
     {
       targetId: 'btn-sidebar-new',
-      title: 'Create & Manage Snippets',
-      description: 'Tap "+ New" right here to add text expansions, or browse and search shortcuts in your library.',
+      title: 'Create New Snippets',
+      description: 'Click "+ New" to open the bottom sheet modal and add a new shortcut keyword and expansion text.',
     },
     {
-      targetId: 'detail-trigger-input',
-      title: 'Custom Trigger Shortcut',
-      description: 'Set your trigger keyword (e.g. /omw). Snippo listens for this keyword and expands it across any website.',
+      targetId: 'sidebar-snippet-list',
+      title: 'Snippet Cards & Actions',
+      description: 'Each card in your library features instant "Edit" and "Delete" options, plus an active toggle switch.',
     },
     {
-      targetId: 'variables-toolbar',
-      title: 'Dynamic Variables Toolbar',
-      description: 'Click smart tags like +{date}, +{time}, +{day}, or +{year} to inject dynamic timestamps and formatting.',
+      targetId: 'sidebar-folders-nav',
+      title: 'Categories & Organization',
+      description: 'Filter snippets by category or click "+" to create custom folders to stay organized.',
     },
     {
-      targetId: 'btn-open-test-modal',
+      targetId: 'btn-open-test-modal-header',
       title: 'Interactive Test Studio',
-      description: 'Click "Test Snippet" right here to pop open the test studio and practice typing your shortcut in real time!',
+      description: 'Practice typing your shortcut keywords in real-time or fine-tune triggers and themes in Settings.',
     },
   ];
 
@@ -68,22 +69,16 @@ class ManagerWorkspace {
 
     this.renderVariablesToolbar();
     this.setupEventListeners();
+    this.setupSheetModal();
     this.setupTestModal();
     this.setupDeleteCategoryModal();
+    this.setupAddCategoryModal();
     this.setupOnboardingTour();
     this.renderFolders();
     this.renderSnippetList();
     this.renderSettings();
 
-    // Restore sidebar collapsed preference on desktop
-    try {
-      const saved = localStorage.getItem('snippo_sidebar_collapsed');
-      if (saved === '1' && window.innerWidth > 768) {
-        this.toggleSidebar(true);
-      }
-    } catch (e) {}
-
-    // Check URL hash for target snippet
+    // Check URL hash for target snippet or new
     const hash = window.location.hash.replace('#', '');
     const params = new URLSearchParams(window.location.search);
     const prefill = params.get('prefill');
@@ -91,18 +86,14 @@ class ManagerWorkspace {
     if (hash === 'new' || prefill) {
       this.createNewSnippet(prefill ? decodeURIComponent(prefill) : undefined);
     } else if (hash && this.snippets.some((s) => s.id === hash)) {
-      this.selectSnippet(hash);
-    } else if (this.snippets.length > 0) {
-      this.selectSnippet(this.snippets[0].id);
-    } else {
-      this.showEmptyState();
+      this.editSnippet(hash);
     }
 
     // Auto-launch tour for first-time users
     try {
       const tourSeen = localStorage.getItem('snippo_tour_seen');
       if (!tourSeen) {
-        setTimeout(() => this.startTour(), 500);
+        setTimeout(() => this.startTour(), 600);
       }
     } catch (e) {}
   }
@@ -115,23 +106,6 @@ class ManagerWorkspace {
     } else {
       document.documentElement.setAttribute('data-theme', theme);
     }
-  }
-
-  // --- Sidebar Collapse & Expand ---
-
-  public toggleSidebar(force?: boolean): void {
-    this.isSidebarCollapsed = force !== undefined ? force : !this.isSidebarCollapsed;
-    const sidebar = document.querySelector('.workspace-sidebar');
-    const layout = document.querySelector('.workspace-layout');
-    const expandBtn = document.getElementById('btn-sidebar-expand');
-
-    if (sidebar) sidebar.classList.toggle('collapsed', this.isSidebarCollapsed);
-    if (layout) layout.classList.toggle('sidebar-collapsed', this.isSidebarCollapsed);
-    if (expandBtn) expandBtn.style.display = this.isSidebarCollapsed ? 'flex' : 'none';
-
-    try {
-      localStorage.setItem('snippo_sidebar_collapsed', this.isSidebarCollapsed ? '1' : '0');
-    } catch (e) {}
   }
 
   // --- Category / Folder Management ---
@@ -157,55 +131,87 @@ class ManagerWorkspace {
 
   private saveCustomFolders(): void {
     try {
-      localStorage.setItem(
-        'snippo_custom_folders',
-        JSON.stringify(Array.from(this.customFolders))
-      );
-      localStorage.setItem(
-        'snippo_deleted_folders',
-        JSON.stringify(Array.from(this.deletedDefaultFolders))
-      );
+      localStorage.setItem('snippo_custom_folders', JSON.stringify(Array.from(this.customFolders)));
+      localStorage.setItem('snippo_deleted_folders', JSON.stringify(Array.from(this.deletedDefaultFolders)));
     } catch (e) {}
   }
 
-  public promptAddCategory(): void {
-    const input = prompt('Enter new category name:');
-    if (!input || !input.trim()) return;
-    const clean = input.trim();
-    this.deletedDefaultFolders.delete(clean);
-    this.customFolders.add(clean);
-    this.saveCustomFolders();
-    this.renderFolders();
+  // --- Add Category Custom Modal (Screenshot 3 Fix) ---
 
-    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
-    if (folderSelect) {
-      folderSelect.value = clean;
-    }
-    const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
-    if (folderInput) {
-      folderInput.value = clean;
-    }
-    const folderChip = document.getElementById('detail-folder-chip');
-    if (folderChip) {
-      folderChip.textContent = clean;
-    }
-    const heroSubtitle = document.getElementById('card-hero-subtitle');
-    if (heroSubtitle) {
-      heroSubtitle.textContent = `${clean.toUpperCase()} • SNIPPET`;
-    }
+  private setupAddCategoryModal(): void {
+    const modal = document.getElementById('add-category-modal');
+    const input = document.getElementById('new-category-name-input') as HTMLInputElement;
+    const confirmBtn = document.getElementById('btn-confirm-add-category');
+    const cancelBtn = document.getElementById('btn-cancel-add-category');
+    const closeBtn = document.getElementById('btn-close-add-category-modal');
+    const errorEl = document.getElementById('add-category-error');
 
-    if (this.selectedSnippetId) {
-      const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
-      if (current) {
-        current.folder = clean;
-        SnippetStore.saveSnippet(current).then(() => {
-          this.renderSnippetList();
-        });
+    const closeModal = () => {
+      if (modal) modal.style.display = 'none';
+      if (input) input.value = '';
+      if (errorEl) errorEl.style.display = 'none';
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    const submit = () => {
+      const val = input?.value.trim();
+      if (!val) {
+        if (errorEl) {
+          errorEl.textContent = 'Category name cannot be empty';
+          errorEl.style.display = 'block';
+        }
+        return;
       }
-    }
+      if (val.toLowerCase() === 'all') {
+        if (errorEl) {
+          errorEl.textContent = '"All" is a reserved category name';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      this.deletedDefaultFolders.delete(val);
+      this.customFolders.add(val);
+      this.saveCustomFolders();
+      this.renderFolders();
+
+      const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+      if (folderSelect) {
+        folderSelect.value = val;
+      }
+
+      closeModal();
+      this.showSaveToast(`Category "${val}" created`);
+    };
+
+    confirmBtn?.addEventListener('click', submit);
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      } else if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
   }
 
-  // --- Delete Category Modal Management ---
+  public promptAddCategory(): void {
+    const modal = document.getElementById('add-category-modal');
+    const input = document.getElementById('new-category-name-input') as HTMLInputElement;
+    const errorEl = document.getElementById('add-category-error');
+
+    if (errorEl) errorEl.style.display = 'none';
+    if (input) input.value = '';
+    if (modal) modal.style.display = 'flex';
+    setTimeout(() => input?.focus(), 50);
+  }
+
+  // --- Delete Category Modal Management (Screenshot 2 Fix) ---
 
   private setupDeleteCategoryModal(): void {
     const modal = document.getElementById('delete-category-modal');
@@ -308,12 +314,12 @@ class ManagerWorkspace {
         countWarning.textContent = `Permanently removes all ${count} snippet${count > 1 ? 's' : ''} inside "${categoryName}".`;
       }
 
-      // Populate destination categories (excluding the one being deleted)
+      // Populate destination categories (NEVER include categoryName being deleted!)
       if (targetSelect) {
         targetSelect.innerHTML = '';
         const destinationFolders = allFolders.filter((f) => f !== categoryName && f !== 'All');
         if (destinationFolders.length === 0) {
-          destinationFolders.push('General');
+          destinationFolders.push(categoryName === 'General' ? 'Uncategorized' : 'General');
         }
         destinationFolders.forEach((f) => {
           const opt = document.createElement('option');
@@ -321,7 +327,6 @@ class ManagerWorkspace {
           opt.textContent = f;
           targetSelect.appendChild(opt);
         });
-        targetSelect.value = destinationFolders[0];
       }
 
       if (radioMove) radioMove.checked = true;
@@ -333,95 +338,71 @@ class ManagerWorkspace {
   }
 
   private async executeDeleteCategory(): Promise<void> {
-    if (!this.categoryPendingDelete) return;
+    const categoryName = this.categoryPendingDelete;
+    if (!categoryName) return;
 
-    const categoryToDelete = this.categoryPendingDelete;
-    const matchingSnippets = this.snippets.filter((s) => s.folder === categoryToDelete);
     const radioMove = document.getElementById('radio-category-move') as HTMLInputElement;
     const targetSelect = document.getElementById('delete-category-target-select') as HTMLSelectElement;
 
-    const shouldMove = matchingSnippets.length > 0 && radioMove?.checked;
-    const targetCategory = shouldMove ? (targetSelect?.value || 'General') : '';
-
-    if (shouldMove) {
-      // Switch all snippets in this category to destination category
-      for (const snip of matchingSnippets) {
-        snip.folder = targetCategory;
-        await SnippetStore.saveSnippet(snip);
+    if (radioMove?.checked && targetSelect) {
+      const destinationCategory = targetSelect.value || 'General';
+      const toMove = this.snippets.filter((s) => s.folder === categoryName);
+      for (const s of toMove) {
+        s.folder = destinationCategory;
+        s.updatedAt = Date.now();
+        await SnippetStore.saveSnippet(s);
       }
-    } else if (matchingSnippets.length > 0) {
-      // Permanently delete all snippets in this category
-      for (const snip of matchingSnippets) {
-        await SnippetStore.deleteSnippet(snip.id);
+    } else {
+      const toDelete = this.snippets.filter((s) => s.folder === categoryName);
+      for (const s of toDelete) {
+        await SnippetStore.deleteSnippet(s.id);
       }
     }
 
-    // Remove from custom folders and track in deletedDefaultFolders
-    this.customFolders.delete(categoryToDelete);
-    this.deletedDefaultFolders.add(categoryToDelete);
+    this.customFolders.delete(categoryName);
+    this.deletedDefaultFolders.add(categoryName);
     this.saveCustomFolders();
 
-    // Adjust active folder if currently viewing the deleted folder
-    if (this.activeFolder === categoryToDelete) {
-      this.activeFolder = shouldMove ? targetCategory : 'All';
+    this.snippets = await SnippetStore.getAllSnippets();
+    if (this.activeFolder === categoryName) {
+      this.activeFolder = 'All';
     }
 
-    // Refresh store & UI
-    this.snippets = await SnippetStore.getAllSnippets();
     this.renderFolders();
     this.renderSnippetList();
-
-    if (this.selectedSnippetId) {
-      const stillExists = this.snippets.some((s) => s.id === this.selectedSnippetId);
-      if (stillExists) {
-        this.selectSnippet(this.selectedSnippetId);
-      } else if (this.snippets.length > 0) {
-        this.selectSnippet(this.snippets[0].id);
-      } else {
-        this.showEmptyState();
-      }
-    }
-
-    // Broadcast update across extension
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
-    }
-
-    const toastMsg = shouldMove
-      ? `Deleted "${categoryToDelete}". ${matchingSnippets.length} snippets switched to "${targetCategory}".`
-      : `Deleted category "${categoryToDelete}".`;
-    this.showSaveToast(toastMsg);
+    this.showSaveToast(`Category "${categoryName}" deleted`);
   }
 
-  // --- Renderers ---
+  // --- Folder Pills Rendering ---
 
   private renderFolders(): void {
     const nav = document.getElementById('sidebar-folders-nav');
     if (!nav) return;
 
-    // Discover unique folders
-    const folderSet = new Set<string>();
-    ['General', 'Personal', 'Work'].forEach((f) => {
-      if (!this.deletedDefaultFolders.has(f)) folderSet.add(f);
-    });
-    this.customFolders.forEach((f) => {
-      if (!this.deletedDefaultFolders.has(f)) folderSet.add(f);
-    });
-    this.snippets.forEach((s) => {
-      if (s.folder && !this.deletedDefaultFolders.has(s.folder)) folderSet.add(s.folder);
-    });
-
-    if (folderSet.size === 0) {
-      folderSet.add('General');
-    }
-
-    const folders = ['All', ...Array.from(folderSet)];
     nav.innerHTML = '';
 
+    const folderSet = new Set<string>();
+    folderSet.add('General');
+
+    this.snippets.forEach((s) => {
+      if (s.folder) folderSet.add(s.folder);
+    });
+
+    this.customFolders.forEach((f) => folderSet.add(f));
+    this.deletedDefaultFolders.forEach((f) => {
+      if (!this.snippets.some((s) => s.folder === f)) {
+        folderSet.delete(f);
+      }
+    });
+
+    const folders = ['All', ...Array.from(folderSet).sort()];
+
     folders.forEach((f) => {
-      if (f === 'All') {
+      const isCustomOrDeletable = f !== 'All';
+
+      if (!isCustomOrDeletable) {
         const tab = document.createElement('button');
-        tab.className = `folder-tab ${this.activeFolder === f ? 'active' : ''}`;
+        tab.className = `folder-tab-btn folder-tab-pill ${this.activeFolder === f ? 'active' : ''}`;
         tab.textContent = f;
         tab.addEventListener('click', () => {
           this.activeFolder = f;
@@ -433,19 +414,19 @@ class ManagerWorkspace {
         const pill = document.createElement('div');
         pill.className = `folder-tab-pill ${this.activeFolder === f ? 'active' : ''}`;
 
-        const tabBtn = document.createElement('button');
-        tabBtn.className = 'folder-tab-btn';
-        tabBtn.textContent = f;
-        tabBtn.addEventListener('click', () => {
+        const textBtn = document.createElement('button');
+        textBtn.className = 'folder-tab-btn';
+        textBtn.textContent = f;
+        textBtn.addEventListener('click', () => {
           this.activeFolder = f;
           this.renderFolders();
           this.renderSnippetList();
         });
-        pill.appendChild(tabBtn);
+        pill.appendChild(textBtn);
 
         const delBtn = document.createElement('button');
         delBtn.className = 'folder-tab-del-btn';
-        delBtn.title = `Delete category "${f}"`;
+        delBtn.title = `Delete "${f}" category`;
         delBtn.innerHTML = `
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -462,9 +443,9 @@ class ManagerWorkspace {
       }
     });
 
-    // Add "+" tab in sidebar folder navigation
+    // Add "+" tab in subbar folder navigation
     const addTab = document.createElement('button');
-    addTab.className = 'folder-tab btn-folder-add-tab';
+    addTab.className = 'btn-folder-add-tab';
     addTab.title = 'Add new category';
     addTab.textContent = '+';
     addTab.addEventListener('click', () => {
@@ -472,7 +453,7 @@ class ManagerWorkspace {
     });
     nav.appendChild(addTab);
 
-    // Populate detail folder dropdown
+    // Populate detail folder dropdown inside modal
     const selectEl = document.getElementById('detail-folder-select') as HTMLSelectElement;
     if (selectEl) {
       const prevVal = selectEl.value;
@@ -489,24 +470,16 @@ class ManagerWorkspace {
         selectEl.value = prevVal;
       }
     }
-
-    // Update folder datalist
-    const datalist = document.getElementById('folder-datalist');
-    if (datalist) {
-      datalist.innerHTML = '';
-      folders
-        .filter((f) => f !== 'All')
-        .forEach((f) => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          datalist.appendChild(opt);
-        });
-    }
   }
+
+  // --- Snippet Cards Grid Rendering (Main Page) ---
 
   private renderSnippetList(): void {
     const listEl = document.getElementById('sidebar-snippet-list');
     const statsLabel = document.getElementById('total-stats-label');
+    const categoryHeading = document.getElementById('current-category-heading');
+    const categoryCount = document.getElementById('current-category-count');
+    const emptyState = document.getElementById('workspace-empty-state');
     if (!listEl) return;
 
     listEl.innerHTML = '';
@@ -525,42 +498,104 @@ class ManagerWorkspace {
         (s) =>
           s.trigger.toLowerCase().includes(q) ||
           s.body.toLowerCase().includes(q) ||
-          (s.description && s.description.toLowerCase().includes(q))
+          (s.folder && s.folder.toLowerCase().includes(q))
       );
     }
 
-    if (statsLabel) {
-      statsLabel.textContent = `${this.snippets.length} snippet${this.snippets.length === 1 ? '' : 's'}`;
+    const totalCountText = `${this.snippets.length} snippet${this.snippets.length === 1 ? '' : 's'}`;
+    if (statsLabel) statsLabel.textContent = totalCountText;
+
+    if (categoryHeading) {
+      categoryHeading.textContent = this.activeFolder === 'All' ? 'All Snippets' : `${this.activeFolder} Snippets`;
+    }
+    if (categoryCount) {
+      categoryCount.textContent = `${filtered.length} snippet${filtered.length === 1 ? '' : 's'}`;
     }
 
     if (filtered.length === 0) {
-      listEl.innerHTML = `
-        <div style="padding: 24px 16px; text-align: center; color: var(--text-tertiary); font-size: 13px;">
-          No snippets found
-        </div>
-      `;
+      if (emptyState) emptyState.style.display = 'block';
       return;
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
     }
 
+    // Render cards
     filtered.forEach((snippet) => {
-      const item = document.createElement('div');
-      item.className = `list-item-snippet ${snippet.id === this.selectedSnippetId ? 'active' : ''}`;
-      item.setAttribute('data-id', snippet.id);
+      const card = document.createElement('div');
+      card.className = `snippet-card ${!snippet.enabled ? 'inactive' : ''}`;
+      card.setAttribute('data-id', snippet.id);
 
-      item.innerHTML = `
-        <div class="list-item-top">
-          <span class="badge-trigger">${this.escapeHtml(snippet.trigger)}</span>
-          <span class="badge-count">${snippet.usageCount || 0}×</span>
+      const cleanBody = snippet.body.replace(/\n/g, ' ').trim() || '(Empty snippet text)';
+
+      card.innerHTML = `
+        <div class="snippet-card-info">
+          <div class="snippet-card-title-row">
+            <span class="card-trigger-title">${this.escapeHtml(snippet.trigger)}</span>
+            <span class="card-folder-badge">${this.escapeHtml(snippet.folder || 'General')}</span>
+          </div>
+          <div class="snippet-card-desc" title="Click Edit to modify">${this.escapeHtml(cleanBody)}</div>
+          <div class="snippet-card-meta-line">
+            <span>Used ${snippet.usageCount || 0} times</span>
+            <span class="meta-dot">&bull;</span>
+            <span>${snippet.enabled ? 'Active' : 'Disabled'}</span>
+          </div>
         </div>
-        <div class="list-item-title">${this.escapeHtml(snippet.description || snippet.trigger)}</div>
-        <div class="list-item-body">${this.escapeHtml(snippet.body.replace(/\n/g, ' '))}</div>
+
+        <div class="snippet-card-footer">
+          <div class="card-actions-left">
+            <button class="btn-card-action btn-card-edit" data-id="${snippet.id}" title="Edit snippet" aria-label="Edit snippet">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button class="btn-card-action btn-card-delete" data-id="${snippet.id}" title="Delete snippet" aria-label="Delete snippet">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="card-toggle-right">
+            <label class="switch" title="Toggle active status">
+              <input type="checkbox" class="card-active-toggle" data-id="${snippet.id}" ${snippet.enabled ? 'checked' : ''}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
       `;
 
-      item.addEventListener('click', () => {
-        this.selectSnippet(snippet.id);
+      // Event listener: Toggle active directly on card
+      const toggle = card.querySelector('.card-active-toggle') as HTMLInputElement;
+      toggle?.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        snippet.enabled = toggle.checked;
+        card.classList.toggle('inactive', !snippet.enabled);
+        await SnippetStore.saveSnippet(snippet);
+        this.showSaveToast(`Snippet ${snippet.enabled ? 'activated' : 'deactivated'}`);
       });
 
-      listEl.appendChild(item);
+      // Event listener: Edit button
+      const editBtn = card.querySelector('.btn-card-edit');
+      editBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editSnippet(snippet.id);
+      });
+
+      // Event listener: Delete button
+      const deleteBtn = card.querySelector('.btn-card-delete');
+      deleteBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectedSnippetId = snippet.id;
+        this.requestDeleteCurrentSnippet();
+      });
+
+      // Clicking card body also edits
+      card.querySelector('.snippet-card-body')?.addEventListener('click', () => {
+        this.editSnippet(snippet.id);
+      });
+
+      listEl.appendChild(card);
     });
   }
 
@@ -586,44 +621,125 @@ class ManagerWorkspace {
     });
   }
 
-  private selectSnippet(id: string): void {
-    this.selectedSnippetId = id;
-    this.showEditorView();
+  // --- Bottom-to-Top Sheet Modal Management ---
 
-    if (window.innerWidth <= 768) {
-      document.querySelector('.workspace-layout')?.classList.add('mobile-editing');
+  private setupSheetModal(): void {
+    const modalBackdrop = document.getElementById('snippet-editor-modal');
+    const closeBtn = document.getElementById('btn-close-sheet-modal');
+    const cancelBtn = document.getElementById('btn-cancel-sheet-modal');
+    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+
+    const closeModal = () => {
+      if (modalBackdrop) {
+        modalBackdrop.classList.remove('open');
+        setTimeout(() => {
+          modalBackdrop.style.display = 'none';
+        }, 280);
+      }
+      this.selectedSnippetId = null;
+      this.isEditingExisting = false;
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+
+    modalBackdrop?.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalBackdrop && modalBackdrop.classList.contains('open')) {
+        closeModal();
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // KEY REQUIREMENT: When user enters keyword then clicks TAB,
+    // go straight to expansion content!
+    // ─────────────────────────────────────────────────────────────
+    triggerInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault();
+        bodyTextarea?.focus();
+        bodyTextarea?.select();
+      }
+    });
+
+    // Body textarea input updates preview
+    bodyTextarea?.addEventListener('input', () => {
+      this.updateOutputPreview();
+    });
+
+    // Trigger input checks conflicts
+    triggerInput?.addEventListener('input', () => {
+      this.checkTriggerConflict();
+      this.updateLiveTestMatcher();
+    });
+  }
+
+  public createNewSnippet(prefillBody?: string): void {
+    this.selectedSnippetId = null;
+    this.isEditingExisting = false;
+
+    const modalBackdrop = document.getElementById('snippet-editor-modal');
+    const sheetTitle = document.getElementById('sheet-modal-title');
+    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+    const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
+    const prefixDisplay = document.getElementById('trigger-prefix-display');
+    const deleteBtn = document.getElementById('btn-delete-snippet');
+
+    if (sheetTitle) sheetTitle.textContent = 'New Snippet';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
+    const prefix = this.settings.triggerPrefix || '/';
+    if (prefixDisplay) prefixDisplay.textContent = prefix || '•';
+
+    if (triggerInput) triggerInput.value = '';
+    if (folderSelect) {
+      folderSelect.value = this.activeFolder !== 'All' ? this.activeFolder : 'General';
+    }
+    if (bodyTextarea) bodyTextarea.value = prefillBody || '';
+    if (enabledSwitch) enabledSwitch.checked = true;
+
+    this.checkTriggerConflict();
+    this.updateOutputPreview();
+
+    if (modalBackdrop) {
+      modalBackdrop.style.display = 'flex';
+      requestAnimationFrame(() => {
+        modalBackdrop.classList.add('open');
+      });
     }
 
+    setTimeout(() => {
+      triggerInput?.focus();
+    }, 150);
+  }
+
+  public editSnippet(id: string): void {
     const snippet = this.snippets.find((s) => s.id === id);
     if (!snippet) return;
 
-    // Update sidebar active selection
-    document.querySelectorAll('.list-item-snippet').forEach((el) => {
-      el.classList.toggle('active', el.getAttribute('data-id') === id);
-    });
+    this.selectedSnippetId = id;
+    this.isEditingExisting = true;
 
-    // Populate editor fields
-    const triggerBadge = document.getElementById('detail-trigger-badge');
-    const usageBadge = document.getElementById('detail-usage-badge');
-    const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
+    const modalBackdrop = document.getElementById('snippet-editor-modal');
+    const sheetTitle = document.getElementById('sheet-modal-title');
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
-    const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
     const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
-    const folderChip = document.getElementById('detail-folder-chip');
-    const heroTitle = document.getElementById('card-hero-title');
-    const heroSubtitle = document.getElementById('card-hero-subtitle');
-    const descInput = document.getElementById('detail-desc-input') as HTMLInputElement;
     const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+    const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
     const prefixDisplay = document.getElementById('trigger-prefix-display');
+    const deleteBtn = document.getElementById('btn-delete-snippet');
 
-    if (triggerBadge) triggerBadge.textContent = snippet.trigger;
-    if (heroTitle) heroTitle.textContent = snippet.trigger;
-    if (heroSubtitle) heroSubtitle.textContent = `${(snippet.folder || 'GENERAL').toUpperCase()} • SNIPPET`;
-    if (folderChip) folderChip.textContent = snippet.folder || 'General';
-    if (usageBadge) usageBadge.textContent = `${snippet.usageCount || 0} expansions`;
-    if (enabledSwitch) enabledSwitch.checked = snippet.enabled;
+    if (sheetTitle) sheetTitle.textContent = 'Edit Snippet';
+    if (deleteBtn) deleteBtn.style.display = 'flex';
 
-    // Format trigger without prefix in input if prefix matches
     const prefix = this.settings.triggerPrefix || '';
     if (prefixDisplay) prefixDisplay.textContent = prefix || '•';
 
@@ -633,54 +749,92 @@ class ManagerWorkspace {
       if (triggerInput) triggerInput.value = snippet.trigger;
     }
 
-    const folderVal = snippet.folder || 'General';
-    if (folderInput) folderInput.value = folderVal;
-    if (folderSelect) folderSelect.value = folderVal;
-    if (descInput) descInput.value = snippet.description || '';
+    if (folderSelect) folderSelect.value = snippet.folder || 'General';
     if (bodyTextarea) bodyTextarea.value = snippet.body || '';
+    if (enabledSwitch) enabledSwitch.checked = snippet.enabled;
 
     this.checkTriggerConflict();
     this.updateOutputPreview();
     this.updateLiveTestMatcher();
-    window.location.hash = snippet.id;
 
-    // Trigger smooth bottom-to-top sheet pop up animation
-    const editor = document.getElementById('editor-view');
-    if (editor) {
-      editor.classList.remove('animate-sheet-up');
-      void editor.offsetWidth;
-      editor.classList.add('animate-sheet-up');
+    if (modalBackdrop) {
+      modalBackdrop.style.display = 'flex';
+      requestAnimationFrame(() => {
+        modalBackdrop.classList.add('open');
+      });
     }
+
+    setTimeout(() => {
+      triggerInput?.focus();
+      triggerInput?.select();
+    }, 150);
   }
 
-  private createNewSnippet(prefillBody?: string): void {
-    const newId = 'snip-' + Math.random().toString(36).slice(2, 9);
-    const prefix = this.settings.triggerPrefix || '/';
+  private async saveCurrentSnippet(): Promise<void> {
+    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
+    const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+    const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
 
-    const newSnippet: Snippet = {
-      id: newId,
-      trigger: `${prefix}new`,
-      body: prefillBody || '',
-      description: 'New Snippet',
-      folder: this.activeFolder !== 'All' ? this.activeFolder : 'General',
-      enabled: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      usageCount: 0,
-    };
-
-    this.snippets.unshift(newSnippet);
-    this.renderFolders();
-    this.renderSnippetList();
-    this.selectSnippet(newId);
-
-    if (window.innerWidth <= 768) {
-      document.querySelector('.workspace-layout')?.classList.add('mobile-editing');
+    const keyword = triggerInput?.value.trim();
+    if (!keyword) {
+      this.showSaveToast('Trigger keyword cannot be empty');
+      triggerInput?.focus();
+      return;
     }
 
-    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
-    triggerInput?.focus();
-    triggerInput?.select();
+    const prefix = this.settings.triggerPrefix || '';
+    const cleanTrigger = prefix + keyword;
+    const chosenFolder = (folderSelect ? folderSelect.value : 'General') || 'General';
+
+    if (this.isEditingExisting && this.selectedSnippetId) {
+      const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
+      if (current) {
+        const updated: Snippet = {
+          ...current,
+          trigger: cleanTrigger,
+          folder: chosenFolder.trim(),
+          body: bodyTextarea ? bodyTextarea.value : '',
+          enabled: enabledSwitch ? enabledSwitch.checked : true,
+          updatedAt: Date.now(),
+        };
+        await SnippetStore.saveSnippet(updated);
+      }
+    } else {
+      const newId = 'snip-' + Math.random().toString(36).slice(2, 9);
+      const newSnippet: Snippet = {
+        id: newId,
+        trigger: cleanTrigger,
+        body: bodyTextarea ? bodyTextarea.value : '',
+        description: '',
+        folder: chosenFolder.trim(),
+        enabled: enabledSwitch ? enabledSwitch.checked : true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        usageCount: 0,
+      };
+      await SnippetStore.saveSnippet(newSnippet);
+    }
+
+    this.snippets = await SnippetStore.getAllSnippets();
+    this.renderFolders();
+    this.renderSnippetList();
+
+    // Close modal sheet
+    const modalBackdrop = document.getElementById('snippet-editor-modal');
+    if (modalBackdrop) {
+      modalBackdrop.classList.remove('open');
+      setTimeout(() => {
+        modalBackdrop.style.display = 'none';
+      }, 280);
+    }
+
+    this.showSaveToast('Snippet saved successfully');
+
+    // Broadcast update to content scripts
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
+    }
   }
 
   // --- Live Output Preview ---
@@ -700,7 +854,7 @@ class ManagerWorkspace {
     previewBox.textContent = resolved.text;
   }
 
-  // --- Conflict Detection (Error Prevention) ---
+  // --- Conflict Detection ---
 
   private checkTriggerConflict(): void {
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
@@ -725,8 +879,6 @@ class ManagerWorkspace {
     }
   }
 
-  // --- Insertion Helper ---
-
   private insertTagIntoBody(tag: string): void {
     const textarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
     if (!textarea) return;
@@ -746,7 +898,7 @@ class ManagerWorkspace {
   // --- Event Bindings ---
 
   private setupEventListeners(): void {
-    // New snippet button in sidebar
+    // New snippet buttons
     document.getElementById('btn-sidebar-new')?.addEventListener('click', () => {
       this.createNewSnippet();
     });
@@ -767,12 +919,7 @@ class ManagerWorkspace {
       this.saveCurrentSnippet();
     });
 
-    // Body textarea live preview listener
-    document.getElementById('detail-body-textarea')?.addEventListener('input', () => {
-      this.updateOutputPreview();
-    });
-
-    // Delete snippet button (Explicit trash icon)
+    // Delete snippet button in sheet modal
     document.getElementById('btn-delete-snippet')?.addEventListener('click', () => {
       this.requestDeleteCurrentSnippet();
     });
@@ -791,56 +938,9 @@ class ManagerWorkspace {
       this.restoreDeletedSnippet();
     });
 
-    // Trigger input live check and hero title update
-    document.getElementById('detail-trigger-input')?.addEventListener('input', () => {
-      this.checkTriggerConflict();
-      const triggerBadge = document.getElementById('detail-trigger-badge');
-      const heroTitle = document.getElementById('card-hero-title');
-      const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
-      const prefix = this.settings.triggerPrefix || '';
-      const full = prefix + triggerInput.value.trim();
-      if (triggerBadge) triggerBadge.textContent = full;
-      if (heroTitle) heroTitle.textContent = full || '/...';
-      this.updateLiveTestMatcher();
-    });
-
-    // Folder select change
-    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
-    folderSelect?.addEventListener('change', () => {
-      const val = folderSelect.value;
-      const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
-      if (folderInput) folderInput.value = val;
-      const folderChip = document.getElementById('detail-folder-chip');
-      if (folderChip) folderChip.textContent = val;
-      const heroSubtitle = document.getElementById('card-hero-subtitle');
-      if (heroSubtitle) heroSubtitle.textContent = `${val.toUpperCase()} • SNIPPET`;
-    });
-
     // Add Category button
     document.getElementById('btn-add-category')?.addEventListener('click', () => {
       this.promptAddCategory();
-    });
-
-    // Sidebar Collapse and Expand Buttons
-    document.getElementById('btn-sidebar-toggle')?.addEventListener('click', () => {
-      this.toggleSidebar();
-    });
-
-    document.getElementById('btn-sidebar-expand')?.addEventListener('click', () => {
-      this.toggleSidebar(false);
-    });
-
-    // Mobile Back Button
-    document.getElementById('btn-mobile-back')?.addEventListener('click', () => {
-      document.querySelector('.workspace-layout')?.classList.remove('mobile-editing');
-    });
-
-    // Close mobile sheet when tapping on backdrop outside sheet
-    const mainPane = document.getElementById('workspace-main-pane');
-    mainPane?.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && e.target === mainPane) {
-        document.querySelector('.workspace-layout')?.classList.remove('mobile-editing');
-      }
     });
 
     // Settings navigation
@@ -849,7 +949,7 @@ class ManagerWorkspace {
     });
 
     document.getElementById('btn-close-settings')?.addEventListener('click', () => {
-      this.showEditorView();
+      this.showSnippetsView();
     });
 
     // Replay tour buttons
@@ -858,7 +958,7 @@ class ManagerWorkspace {
     });
 
     document.getElementById('btn-settings-replay-tour')?.addEventListener('click', () => {
-      this.showEditorView();
+      this.showSnippetsView();
       this.startTour();
     });
 
@@ -879,12 +979,12 @@ class ManagerWorkspace {
         const text = reader.result as string;
         const res = await BackupManager.importBackup(text, 'merge');
         if (res.success) {
-          alert(`Successfully imported ${res.importedCount} snippet(s)!`);
+          this.showSaveToast(`Successfully imported ${res.importedCount} snippet(s)!`);
           this.snippets = await SnippetStore.getAllSnippets();
           this.renderFolders();
           this.renderSnippetList();
         } else {
-          alert('Import failed: ' + res.errors.join(', '));
+          this.showSaveToast('Import failed: ' + res.errors.join(', '));
         }
       };
       reader.readAsText(file);
@@ -892,53 +992,18 @@ class ManagerWorkspace {
     });
   }
 
-  private async saveCurrentSnippet(): Promise<void> {
-    if (!this.selectedSnippetId) return;
+  private showSettingsView(): void {
+    const snippetsView = document.getElementById('snippets-page-view');
+    const settingsView = document.getElementById('settings-view');
+    if (snippetsView) snippetsView.style.display = 'none';
+    if (settingsView) settingsView.style.display = 'flex';
+  }
 
-    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
-    const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
-    const folderInput = document.getElementById('detail-folder-input') as HTMLInputElement;
-    const descInput = document.getElementById('detail-desc-input') as HTMLInputElement;
-    const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
-    const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
-
-    const prefix = this.settings.triggerPrefix || '';
-    const cleanTrigger = prefix + triggerInput.value.trim();
-
-    if (!cleanTrigger) {
-      alert('Trigger cannot be empty');
-      return;
-    }
-
-    const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
-    if (!current) return;
-
-    const chosenFolder = (folderSelect ? folderSelect.value : folderInput?.value) || 'General';
-
-    const updated: Snippet = {
-      ...current,
-      trigger: cleanTrigger,
-      folder: chosenFolder.trim(),
-      description: descInput.value.trim(),
-      body: bodyTextarea.value,
-      enabled: enabledSwitch.checked,
-      updatedAt: Date.now(),
-    };
-
-    await SnippetStore.saveSnippet(updated);
-    this.snippets = await SnippetStore.getAllSnippets();
-
-    this.renderFolders();
-    this.renderSnippetList();
-    this.selectSnippet(updated.id);
-
-    // Show Transient Save Toast Notification
-    this.showSaveToast('Snippet saved successfully');
-
-    // Broadcast update to content scripts
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
-    }
+  private showSnippetsView(): void {
+    const snippetsView = document.getElementById('snippets-page-view');
+    const settingsView = document.getElementById('settings-view');
+    if (snippetsView) snippetsView.style.display = 'flex';
+    if (settingsView) settingsView.style.display = 'none';
   }
 
   private showSaveToast(text: string): void {
@@ -959,7 +1024,7 @@ class ManagerWorkspace {
     }, 2400);
   }
 
-  // --- Delete Confirmation & Loss Aversion Undo Toast ---
+  // --- Deletion Flow ---
 
   private requestDeleteCurrentSnippet(): void {
     if (!this.selectedSnippetId) return;
@@ -979,7 +1044,7 @@ class ManagerWorkspace {
     if (!toast) return;
 
     if (msg) {
-      msg.textContent = `"${snippet.trigger}" shortcut will be permanently removed.`;
+      msg.textContent = `"${snippet.trigger}" will be deleted.`;
     }
     toast.classList.add('visible');
   }
@@ -996,6 +1061,15 @@ class ManagerWorkspace {
     const toDelete = this.snippets.find((s) => s.id === this.selectedSnippetId);
     if (!toDelete) return;
 
+    // Close sheet modal if open
+    const modalBackdrop = document.getElementById('snippet-editor-modal');
+    if (modalBackdrop && modalBackdrop.classList.contains('open')) {
+      modalBackdrop.classList.remove('open');
+      setTimeout(() => {
+        modalBackdrop.style.display = 'none';
+      }, 280);
+    }
+
     await SnippetStore.deleteSnippet(toDelete.id);
     this.deletedSnippetStack.push(toDelete);
     this.snippets = await SnippetStore.getAllSnippets();
@@ -1003,13 +1077,6 @@ class ManagerWorkspace {
     this.renderFolders();
     this.renderSnippetList();
 
-    if (this.snippets.length > 0) {
-      this.selectSnippet(this.snippets[0].id);
-    } else {
-      this.showEmptyState();
-    }
-
-    // Broadcast update to content scripts and background
     if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
       chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
     }
@@ -1058,30 +1125,24 @@ class ManagerWorkspace {
     this.snippets = await SnippetStore.getAllSnippets();
     this.renderFolders();
     this.renderSnippetList();
-    this.selectSnippet(restored.id);
+    this.showSaveToast('Snippet restored');
   }
 
-  // --- Interactive Test Modal ---
+  // --- Interactive Test Studio Modal ---
 
   private setupTestModal(): void {
     const openBtn = document.getElementById('btn-open-test-modal');
+    const headerOpenBtn = document.getElementById('btn-open-test-modal-header');
     const closeBtn = document.getElementById('btn-close-test-modal');
     const doneBtn = document.getElementById('btn-modal-done');
     const clearBtn = document.getElementById('btn-modal-clear-input');
     const modalEl = document.getElementById('test-snippet-modal');
     const modalInput = document.getElementById('modal-test-input') as HTMLTextAreaElement;
 
-    openBtn?.addEventListener('click', () => {
-      this.openTestModal();
-    });
-
-    closeBtn?.addEventListener('click', () => {
-      this.closeTestModal();
-    });
-
-    doneBtn?.addEventListener('click', () => {
-      this.closeTestModal();
-    });
+    openBtn?.addEventListener('click', () => this.openTestModal());
+    headerOpenBtn?.addEventListener('click', () => this.openTestModal());
+    closeBtn?.addEventListener('click', () => this.closeTestModal());
+    doneBtn?.addEventListener('click', () => this.closeTestModal());
 
     clearBtn?.addEventListener('click', () => {
       if (modalInput) {
@@ -1092,18 +1153,9 @@ class ManagerWorkspace {
     });
 
     modalEl?.addEventListener('click', (e) => {
-      if (e.target === modalEl) {
-        this.closeTestModal();
-      }
+      if (e.target === modalEl) this.closeTestModal();
     });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalEl && modalEl.style.display !== 'none') {
-        this.closeTestModal();
-      }
-    });
-
-    // Real-time expansion testing inside modal textarea
     modalInput?.addEventListener('input', () => {
       this.handleModalTestInput();
     });
@@ -1150,113 +1202,73 @@ class ManagerWorkspace {
     }
   }
 
+  private updateLiveTestMatcher(): void {
+    const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
+    const prefix = this.settings?.triggerPrefix || '';
+
+    const index: Record<string, { id: string; trigger: string; enabled: boolean; folder: string }> = {};
+
+    this.snippets.forEach((s) => {
+      index[s.trigger] = { id: s.id, trigger: s.trigger, enabled: s.enabled, folder: s.folder };
+    });
+
+    if (triggerInput && triggerInput.value.trim()) {
+      const activeTrigger = prefix + triggerInput.value.trim();
+      index[activeTrigger] = { id: 'live-test', trigger: activeTrigger, enabled: true, folder: 'Test' };
+    }
+
+    this.testMatcher.updateIndex(index);
+  }
+
   private handleModalTestInput(): void {
     const modalInput = document.getElementById('modal-test-input') as HTMLTextAreaElement;
     const statusEl = document.getElementById('modal-preview-status');
     const contentEl = document.getElementById('modal-preview-content');
     if (!modalInput) return;
 
-    const val = modalInput.value;
-    const match = this.testMatcher.matchTail(val);
+    this.updateLiveTestMatcher();
+    const text = modalInput.value;
+    const match = this.testMatcher.matchTail(text);
 
     if (match) {
-      const snippet = this.snippets.find((s) => s.id === match.snippetId);
-      if (snippet) {
-        const resolved = TemplateResolver.resolve(snippet.body);
-        const start = val.length - match.tailLength;
-        modalInput.value = val.slice(0, start) + resolved.text;
-        const cursorPos =
-          resolved.cursorOffset !== undefined
-            ? start + resolved.cursorOffset
-            : modalInput.value.length;
-        modalInput.setSelectionRange(cursorPos, cursorPos);
-
-        if (statusEl) {
-          statusEl.textContent = `Expanded (${snippet.trigger})!`;
-          statusEl.style.color = 'var(--color-brand-green)';
-        }
-        if (contentEl) {
-          contentEl.textContent = resolved.text;
-        }
+      let bodyToResolve = '';
+      if (match.snippetId === 'live-test') {
+        const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
+        bodyToResolve = bodyTextarea?.value || '';
+      } else {
+        const target = this.snippets.find((s) => s.id === match.snippetId);
+        bodyToResolve = target?.body || '';
       }
-    } else {
-      // If no tail match but user typed active trigger specifically
-      const currentSnippet = this.snippets.find((s) => s.id === this.selectedSnippetId);
-      if (currentSnippet && val.includes(currentSnippet.trigger)) {
-        const resolved = TemplateResolver.resolve(currentSnippet.body);
-        if (statusEl) {
-          statusEl.textContent = `Trigger detected: ${currentSnippet.trigger}`;
-          statusEl.style.color = 'var(--color-brand-violet)';
-        }
-        if (contentEl) {
-          contentEl.textContent = resolved.text;
-        }
+
+      const resolved = TemplateResolver.resolve(bodyToResolve);
+      const before = text.slice(0, text.length - match.tailLength);
+      modalInput.value = before + resolved.text;
+
+      if (statusEl) {
+        statusEl.textContent = `Expanded trigger "${match.matchedTrigger}"!`;
+        statusEl.style.color = 'var(--color-brand-green)';
+      }
+      if (contentEl) {
+        contentEl.textContent = resolved.text;
       }
     }
   }
 
-  private updateLiveTestMatcher(): void {
-    const index: Record<string, any> = {};
-    this.snippets.forEach((s) => {
-      if (s.enabled) {
-        index[s.trigger] = { id: s.id, trigger: s.trigger, enabled: true };
-      }
-    });
-    this.testMatcher.updateIndex(index);
-  }
-
-  // --- First-time Guided Onboarding Tour (Targeted Positioning & Spotlights) ---
+  // --- Onboarding Tour ---
 
   private setupOnboardingTour(): void {
-    const overlay = document.getElementById('tour-overlay');
     const nextBtn = document.getElementById('btn-tour-next');
     const prevBtn = document.getElementById('btn-tour-prev');
     const skipBtn = document.getElementById('btn-tour-skip');
 
-    const dots = document.querySelectorAll('.tour-dot');
-    dots.forEach((dot, idx) => {
-      dot.addEventListener('click', () => {
-        this.currentTourStep = idx;
-        this.renderTourStep();
-      });
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      this.nextTourStep();
-    });
-
-    prevBtn?.addEventListener('click', () => {
-      this.prevTourStep();
-    });
-
-    skipBtn?.addEventListener('click', () => {
-      this.endTour();
-    });
-
-    overlay?.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        this.endTour();
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      if (overlay && overlay.style.display !== 'none') {
-        const step = this.tourSteps[this.currentTourStep];
-        this.positionTourCard(step?.targetId);
-      }
-    });
+    nextBtn?.addEventListener('click', () => this.nextTourStep());
+    prevBtn?.addEventListener('click', () => this.prevTourStep());
+    skipBtn?.addEventListener('click', () => this.endTour());
   }
 
   public startTour(): void {
     this.currentTourStep = 0;
-    this.showEditorView();
-
-    // Ensure a snippet is selected so editor fields are visible and populated
-    if (!this.selectedSnippetId && this.snippets.length > 0) {
-      this.selectSnippet(this.snippets[0].id);
-    } else if (this.snippets.length === 0) {
-      this.createNewSnippet();
-    }
+    this.showSnippetsView();
 
     document.body.classList.add('tour-active');
     const overlay = document.getElementById('tour-overlay');
@@ -1272,18 +1284,6 @@ class ManagerWorkspace {
   private renderTourStep(): void {
     const step = this.tourSteps[this.currentTourStep];
     if (!step) return;
-
-    this.showEditorView();
-
-    const isMobile = window.innerWidth <= 768;
-    const layout = document.querySelector('.workspace-layout');
-    if (isMobile && layout) {
-      if (this.currentTourStep === 0) {
-        layout.classList.remove('mobile-editing');
-      } else {
-        layout.classList.add('mobile-editing');
-      }
-    }
 
     const numEl = document.getElementById('tour-step-num');
     const titleEl = document.getElementById('tour-title');
@@ -1308,10 +1308,9 @@ class ManagerWorkspace {
       dot.classList.toggle('active', idx === this.currentTourStep);
     });
 
-    // Position dynamically next to the target element with arrow and spotlight
     setTimeout(() => {
       this.positionTourCard(step.targetId);
-    }, 60);
+    }, 50);
   }
 
   private positionTourCard(targetId?: string): void {
@@ -1319,7 +1318,6 @@ class ManagerWorkspace {
     const arrow = document.getElementById('tour-pointer-arrow');
     if (!card) return;
 
-    // Remove previous spotlight highlights
     document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
       el.classList.remove('tour-target-spotlight');
     });
@@ -1332,7 +1330,7 @@ class ManagerWorkspace {
       return;
     }
 
-    const targetEl = document.getElementById(targetId);
+    const targetEl = document.getElementById(targetId) || document.querySelector(targetId);
     if (!targetEl) {
       card.style.top = '50%';
       card.style.left = '50%';
@@ -1341,24 +1339,17 @@ class ManagerWorkspace {
       return;
     }
 
-    // Add glowing spotlight to target element
     targetEl.classList.add('tour-target-spotlight');
-    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-
     const rect = targetEl.getBoundingClientRect();
-    const isMobile = window.innerWidth <= 768;
     const cardWidth = Math.min(360, window.innerWidth - 32);
-
     card.style.width = `${cardWidth}px`;
     card.style.transform = 'none';
+    const cardHeight = card.offsetHeight || 160;
 
-    const cardHeight = card.offsetHeight || 180;
-
-    if (isMobile) {
+    if (window.innerWidth <= 768) {
       if (arrow) arrow.style.display = 'none';
       card.style.left = '16px';
       card.style.right = '16px';
-
       if (rect.bottom + cardHeight + 20 < window.innerHeight) {
         card.style.top = `${rect.bottom + 12}px`;
       } else {
@@ -1367,67 +1358,28 @@ class ManagerWorkspace {
       return;
     }
 
-    // Desktop positioning
     if (arrow) arrow.style.display = 'block';
 
-    // Special handling for Step 1: `btn-sidebar-new` located inside the sidebar
-    if (targetId === 'btn-sidebar-new') {
-      const sidebarEl = document.querySelector('.workspace-sidebar');
-      const sidebarRect = sidebarEl?.getBoundingClientRect();
-      const sidebarRight = sidebarRect ? sidebarRect.right : 260;
-
-      // Position card cleanly to the right of the sidebar, vertically aligned with button
-      const left = sidebarRight + 18;
-      const top = Math.max(16, rect.top - 10);
-      card.style.left = `${left}px`;
-      card.style.top = `${top}px`;
-
-      if (arrow) {
-        arrow.className = 'tour-pointer-arrow arrow-left';
-        arrow.style.left = '-6px';
-        arrow.style.right = 'auto';
-        arrow.style.top = `${Math.max(16, Math.min(cardHeight - 24, rect.top - top + rect.height / 2 - 6))}px`;
-        arrow.style.bottom = 'auto';
-      }
-      return;
-    }
-
-    // Steps 2, 3, 4 (Elements inside the Editor Pane)
     const targetCenterX = rect.left + rect.width / 2;
-    const sidebarEl = document.querySelector('.workspace-sidebar');
-    const minLeft = (sidebarEl?.getBoundingClientRect()?.right || 260) + 16;
-
     let left = targetCenterX - cardWidth / 2;
-    if (left < minLeft) left = minLeft;
+    if (left < 20) left = 20;
     if (left + cardWidth > window.innerWidth - 20) {
       left = window.innerWidth - cardWidth - 20;
     }
 
-    // Try placing below target
-    if (rect.bottom + cardHeight + 24 < window.innerHeight) {
-      const top = rect.bottom + 14;
-      card.style.top = `${top}px`;
+    if (rect.bottom + cardHeight + 20 < window.innerHeight) {
+      card.style.top = `${rect.bottom + 12}px`;
       card.style.left = `${left}px`;
       if (arrow) {
         arrow.className = 'tour-pointer-arrow arrow-top';
-        arrow.style.top = '-6px';
-        arrow.style.bottom = 'auto';
-        arrow.style.right = 'auto';
-        const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
-        arrow.style.left = `${arrowLeft}px`;
+        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6))}px`;
       }
     } else {
-      // Place above target
-      const top = Math.max(16, rect.top - cardHeight - 14);
-      card.style.top = `${top}px`;
+      card.style.top = `${Math.max(16, rect.top - cardHeight - 12)}px`;
       card.style.left = `${left}px`;
       if (arrow) {
         arrow.className = 'tour-pointer-arrow arrow-bottom';
-        arrow.style.bottom = '-6px';
-        arrow.style.top = 'auto';
-        arrow.style.right = 'auto';
-        const arrowLeft = Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6));
-        arrow.style.left = `${arrowLeft}px`;
+        arrow.style.left = `${Math.max(16, Math.min(cardWidth - 28, targetCenterX - left - 6))}px`;
       }
     }
   }
@@ -1454,152 +1406,111 @@ class ManagerWorkspace {
     const card = document.getElementById('tour-card');
     if (overlay) overlay.style.display = 'none';
     if (card) card.style.display = 'none';
+
     document.querySelectorAll('.tour-target-spotlight').forEach((el) => {
       el.classList.remove('tour-target-spotlight');
     });
+
     try {
       localStorage.setItem('snippo_tour_seen', '1');
     } catch (e) {}
-  }
-
-  // --- Views Switching ---
-
-  private showEditorView(): void {
-    const editor = document.getElementById('editor-view');
-    const settings = document.getElementById('settings-view');
-    const empty = document.getElementById('workspace-empty-state');
-    if (editor) editor.style.display = 'flex';
-    if (settings) settings.style.display = 'none';
-    if (empty) empty.style.display = 'none';
-  }
-
-  private showEmptyState(): void {
-    const editor = document.getElementById('editor-view');
-    const settings = document.getElementById('settings-view');
-    const empty = document.getElementById('workspace-empty-state');
-    if (editor) editor.style.display = 'none';
-    if (settings) settings.style.display = 'none';
-    if (empty) empty.style.display = 'flex';
-    this.selectedSnippetId = null;
-  }
-
-  private showSettingsView(): void {
-    const editor = document.getElementById('editor-view');
-    const settings = document.getElementById('settings-view');
-    const empty = document.getElementById('workspace-empty-state');
-    if (editor) editor.style.display = 'none';
-    if (settings) settings.style.display = 'flex';
-    if (empty) empty.style.display = 'none';
   }
 
   // --- Settings Controller ---
 
   private renderSettings(): void {
     const themeSelect = document.getElementById('setting-theme-select') as HTMLSelectElement;
-    const prefixSelect = document.getElementById('setting-prefix-select') as HTMLSelectElement;
-    const modeSelect = document.getElementById('setting-expand-mode') as HTMLSelectElement;
-
     if (themeSelect) {
       themeSelect.value = this.settings.theme || 'system';
       themeSelect.addEventListener('change', async () => {
-        const chosenTheme = themeSelect.value as any;
-        this.settings = await SnippetStore.updateSettings({
-          theme: chosenTheme,
-        });
-        this.applyTheme(chosenTheme);
+        const val = themeSelect.value as any;
+        this.settings.theme = val;
+        this.applyTheme(val);
+        await SnippetStore.updateSettings({ theme: val });
       });
     }
 
+    const prefixSelect = document.getElementById('setting-prefix-select') as HTMLSelectElement;
     if (prefixSelect) {
-      prefixSelect.value = this.settings.triggerPrefix;
+      prefixSelect.value = this.settings.triggerPrefix !== undefined ? this.settings.triggerPrefix : '/';
       prefixSelect.addEventListener('change', async () => {
-        this.settings = await SnippetStore.updateSettings({
-          triggerPrefix: prefixSelect.value,
-        });
+        this.settings.triggerPrefix = prefixSelect.value;
+        await SnippetStore.updateSettings({ triggerPrefix: prefixSelect.value });
         const prefixDisplay = document.getElementById('trigger-prefix-display');
         if (prefixDisplay) prefixDisplay.textContent = this.settings.triggerPrefix || '•';
       });
     }
 
-    if (modeSelect) {
-      modeSelect.value = this.settings.expandOn;
-      modeSelect.addEventListener('change', async () => {
-        this.settings = await SnippetStore.updateSettings({
-          expandOn: modeSelect.value as any,
-        });
+    const confirmDelete = document.getElementById('setting-confirm-delete') as HTMLInputElement;
+    if (confirmDelete) {
+      confirmDelete.checked = this.settings.confirmOnDelete !== false;
+      confirmDelete.addEventListener('change', async () => {
+        this.settings.confirmOnDelete = confirmDelete.checked;
+        await SnippetStore.updateSettings({ confirmOnDelete: confirmDelete.checked });
       });
     }
 
-    const confirmDeleteCheck = document.getElementById('setting-confirm-delete') as HTMLInputElement;
-    if (confirmDeleteCheck) {
-      confirmDeleteCheck.checked = this.settings.confirmOnDelete !== false;
-      confirmDeleteCheck.addEventListener('change', async () => {
-        this.settings = await SnippetStore.updateSettings({
-          confirmOnDelete: confirmDeleteCheck.checked,
-        });
-      });
-    }
-
-    this.renderExclusionList();
-
-    // Add exclusion domain button
-    document.getElementById('btn-add-exclusion')?.addEventListener('click', async () => {
-      const input = document.getElementById('new-exclusion-input') as HTMLInputElement;
-      if (!input || !input.value.trim()) return;
-
-      const domain = input.value.trim().toLowerCase();
-      await SnippetStore.toggleDomainExclusion(domain);
-      this.settings = await SnippetStore.getSettings();
-      input.value = '';
-      this.renderExclusionList();
+    this.renderExclusions();
+    document.getElementById('btn-add-exclusion')?.addEventListener('click', () => {
+      this.addExclusion();
     });
   }
 
-  private renderExclusionList(): void {
-    const listEl = document.getElementById('exclusion-domains-list');
-    if (!listEl) return;
+  private renderExclusions(): void {
+    const list = document.getElementById('exclusion-domains-list');
+    if (!list) return;
 
-    listEl.innerHTML = '';
-    const domains = this.settings.excludedDomains || [];
+    list.innerHTML = '';
+    const exclusions = this.settings.excludedDomains || [];
 
-    if (domains.length === 0) {
-      listEl.innerHTML = '<span class="text-xs text-muted">No websites currently excluded.</span>';
-      return;
-    }
-
-    domains.forEach((d) => {
-      const chip = document.createElement('div');
+    exclusions.forEach((domain) => {
+      const chip = document.createElement('span');
       chip.className = 'exclusion-chip';
       chip.innerHTML = `
-        <span>${this.escapeHtml(d)}</span>
-        <button class="exclusion-remove-btn" title="Remove exclusion">×</button>
+        <span>${this.escapeHtml(domain)}</span>
+        <button class="exclusion-remove-btn" title="Remove exclusion" data-domain="${domain}">×</button>
       `;
 
-      chip.querySelector('.exclusion-remove-btn')?.addEventListener('click', async () => {
-        await SnippetStore.toggleDomainExclusion(d);
-        this.settings = await SnippetStore.getSettings();
-        this.renderExclusionList();
+      chip.querySelector('button')?.addEventListener('click', async (e) => {
+        const d = (e.currentTarget as HTMLElement).getAttribute('data-domain');
+        if (d) {
+          this.settings.excludedDomains = (this.settings.excludedDomains || []).filter((item) => item !== d);
+          await SnippetStore.updateSettings({ excludedDomains: this.settings.excludedDomains });
+          this.renderExclusions();
+        }
       });
 
-      listEl.appendChild(chip);
+      list.appendChild(chip);
     });
+  }
+
+  private async addExclusion(): Promise<void> {
+    const input = document.getElementById('new-exclusion-input') as HTMLInputElement;
+    if (!input || !input.value.trim()) return;
+
+    let domain = input.value.trim().toLowerCase();
+    domain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+    const current = this.settings.excludedDomains || [];
+    if (!current.includes(domain)) {
+      this.settings.excludedDomains = [...current, domain];
+      await SnippetStore.updateSettings({ excludedDomains: this.settings.excludedDomains });
+      this.renderExclusions();
+      input.value = '';
+    }
   }
 
   private escapeHtml(str: string): string {
-    return str.replace(/[&<>"']/g, (m) => {
-      const map: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;',
-      };
-      return map[m];
-    });
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 }
 
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   const workspace = new ManagerWorkspace();
-  workspace.init();
+  workspace.init().catch((err) => {
+    console.error('Failed to initialize Snippo Workspace:', err);
+  });
 });

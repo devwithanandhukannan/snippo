@@ -63,16 +63,19 @@ h1, h2, h3, h4 {
   transform: scale(0.97);
 }
 
-/* Primary: Solid high-contrast pill */
+/* Primary: Brand violet signature pill */
 .btn-primary {
-  background-color: var(--color-accent);
-  color: var(--color-accent-text);
+  background-color: var(--color-brand-violet, #6D63E6);
+  color: #FFFFFF;
   border-radius: var(--radius-full);
   font-weight: 600;
+  border: none;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  background-color: var(--color-brand-violet-dark, #5B5BD6);
+  color: #FFFFFF;
+  opacity: 1;
   transform: translateY(-1px);
 }
 

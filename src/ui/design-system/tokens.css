@@ -111,13 +111,13 @@
     --color-accent-subtle: rgba(255, 255, 255, 0.08);
     --color-accent-text: #0A0B0E;
 
-    --bg-app: #0A0B0E;
-    --bg-surface: #121317;
-    --bg-surface-elevated: #17181D;
-    --bg-surface-secondary: #1F2026;
-    --bg-surface-hover: rgba(255, 255, 255, 0.06);
-    --bg-frosted: rgba(23, 24, 29, 0.9);
-    --bg-input: #1F2026;
+    --bg-app: #18191E;
+    --bg-surface: #24262E;
+    --bg-surface-elevated: #202229;
+    --bg-surface-secondary: #1F2128;
+    --bg-surface-hover: #292B34;
+    --bg-frosted: rgba(24, 25, 30, 0.9);
+    --bg-input: #131418;
 
     --text-primary: #F8FAFC;
     --text-secondary: #94A3B8;
@@ -156,13 +156,13 @@
   --color-accent-subtle: rgba(255, 255, 255, 0.08);
   --color-accent-text: #0A0B0E;
 
-  --bg-app: #0A0B0E;
-  --bg-surface: #121317;
-  --bg-surface-elevated: #17181D;
-  --bg-surface-secondary: #1F2026;
-  --bg-surface-hover: rgba(255, 255, 255, 0.06);
-  --bg-frosted: rgba(23, 24, 29, 0.9);
-  --bg-input: #1F2026;
+  --bg-app: #18191E;
+  --bg-surface: #24262E;
+  --bg-surface-elevated: #202229;
+  --bg-surface-secondary: #1F2128;
+  --bg-surface-hover: #292B34;
+  --bg-frosted: rgba(24, 25, 30, 0.9);
+  --bg-input: #131418;
 
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;

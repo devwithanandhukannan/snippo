@@ -12,11 +12,11 @@
 </head>
 <body>
   <div class="workspace-layout">
-    <!-- Sidebar Left -->
-    <aside class="workspace-sidebar">
-      <!-- Sidebar Header -->
-      <div class="sidebar-header">
-        <div class="sidebar-brand">
+    <!-- Workspace Top Bar -->
+    <header class="workspace-topbar">
+      <div class="topbar-left">
+        <!-- Brand Logo -->
+        <div class="brand-group">
           <div class="brand-logo" aria-hidden="true">
             <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -34,283 +34,114 @@
           </div>
           <span class="brand-title">snippo<span class="brand-slash">/</span></span>
         </div>
-        <!-- Primary Action & Collapse Button -->
-        <div class="sidebar-header-actions">
-          <button class="btn btn-primary btn-new-snippet" id="btn-sidebar-new">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
+
+        <!-- Search Bar -->
+        <div class="topbar-search">
+          <div class="search-box">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            New
-          </button>
-          <button class="btn-sidebar-toggle" id="btn-sidebar-toggle" title="Collapse sidebar">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="3" x2="9" y2="21"></line>
-            </svg>
-          </button>
+            <input type="text" id="sidebar-search-input" class="search-input" placeholder="Search snippets, triggers...">
+          </div>
         </div>
       </div>
 
-      <!-- Search in Sidebar -->
-      <div class="sidebar-search">
-        <div class="search-box">
-          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      <!-- Topbar Actions -->
+      <div class="topbar-right">
+        <!-- Interactive Test Studio Pill -->
+        <button class="btn btn-ghost btn-sm topbar-btn" id="btn-open-test-modal-header" title="Interactive test studio">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          <input type="text" id="sidebar-search-input" class="search-input" placeholder="Search snippets...">
-        </div>
-      </div>
+          <span>Test Snippet</span>
+        </button>
 
-      <!-- Folders Navigation -->
-      <div class="sidebar-folders" id="sidebar-folders-nav">
-        <!-- Dynamically rendered folder tabs -->
-      </div>
-
-      <!-- Snippet List Items -->
-      <div class="sidebar-list" id="sidebar-snippet-list">
-        <!-- Dynamically filled list -->
-      </div>
-
-      <!-- Sidebar Footer: Settings, Tour & Stats -->
-      <div class="sidebar-footer">
-        <div class="sidebar-footer-actions">
-          <button class="btn btn-ghost btn-sm" id="btn-tab-settings" title="Settings & Preferences">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-            Settings
-          </button>
-          <button class="btn btn-ghost btn-sm" id="btn-sidebar-tour" title="Take a tour of Snippo">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polygon points="10 8 16 12 10 16 10 8"></polygon>
-            </svg>
-            Tour
-          </button>
-        </div>
-        <span class="text-xs text-muted" id="total-stats-label">0 snippets</span>
-      </div>
-    </aside>
-
-    <!-- Detail Pane Right (Modern Apple / Seamless Studio Card Layout) -->
-    <main class="workspace-main" id="workspace-main-pane">
-      <!-- Floating Sidebar Expand Button (Shown when sidebar is collapsed) -->
-      <button class="btn-sidebar-expand-float" id="btn-sidebar-expand" title="Show sidebar">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="9" y1="3" x2="9" y2="21"></line>
-          <polyline points="13 10 15 12 13 14"></polyline>
-        </svg>
-      </button>
-
-      <!-- Editor View -->
-      <section class="editor-view" id="editor-view">
-        <!-- Top Sheet Pill Handle -->
-        <div class="card-sheet-handle" aria-hidden="true"></div>
-
-        <!-- Top Status & Actions Header -->
-        <header class="sheet-header">
-          <div class="sheet-header-main">
-            <div class="sheet-header-left">
-              <button class="btn-mobile-back" id="btn-mobile-back" title="Back to snippet list">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                <span>Snippets</span>
-              </button>
-
-              <div class="sheet-category-badge">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-                <span>Text Expansion</span>
-              </div>
-            </div>
-
-            <div class="sheet-header-toggles">
-              <label class="switch-with-label" title="Enable or disable snippet">
-                <span class="text-xs text-muted">Active</span>
-                <label class="switch">
-                  <input type="checkbox" id="detail-enabled-switch" checked>
-                  <span class="slider"></span>
-                </label>
-              </label>
-
-              <!-- Explicit Delete Trash Button (Fixed UI Mistake: Clear Trash Can Icon) -->
-              <button class="btn-circle-action btn-delete-action" id="btn-delete-snippet" title="Delete this snippet">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                  <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="sheet-actions-group">
-            <!-- Test Snippet Modal Button -->
-            <button class="btn-action-pill btn-test-pill" id="btn-open-test-modal" title="Test snippet live in a modal">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              <span>Test Snippet</span>
-            </button>
-
-            <!-- Save Snippet Button -->
-            <button class="btn-action-pill btn-save-pill" id="btn-save-snippet" title="Save snippet">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <span>Save</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Main Title & Metadata Badges -->
-        <div class="sheet-hero">
-          <h1 class="sheet-hero-title" id="card-hero-title">/trigger</h1>
-          <div class="sheet-hero-subtitle" id="card-hero-subtitle">GENERAL SNIPPET</div>
-          
-          <div class="sheet-meta-pills">
-            <span class="meta-pill">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Instant Trigger
-            </span>
-            <span class="meta-pill" id="detail-usage-badge">
-              0 expansions
-            </span>
-            <span class="meta-pill highlight-pill" id="detail-folder-chip">
-              General
-            </span>
-            <!-- Hidden original badge kept for manager.ts query safety -->
-            <span id="detail-trigger-badge" style="display: none;">/trigger</span>
-          </div>
-        </div>
-
-        <!-- Inline Conflict Warning Banner -->
-        <div class="conflict-banner" id="conflict-warning-banner" style="display: none;">
+        <!-- Settings Button (Icon Only) -->
+        <button class="btn btn-ghost btn-sm topbar-btn btn-topbar-icon" id="btn-tab-settings" title="Settings & Preferences" aria-label="Settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <span id="conflict-warning-text">Conflict detected with another trigger</span>
-        </div>
+        </button>
 
-        <!-- Section: Key Details (Cards side by side with zero borders) -->
-        <div class="sheet-section" id="section-configuration">
-          <div class="section-label">Configuration</div>
-          
-          <div class="cards-grid-2">
-            <!-- Trigger Card -->
-            <div class="soft-card">
-              <div class="soft-card-icon trigger-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="19" y1="5" x2="5" y2="19"></line>
-                </svg>
-              </div>
-              <div class="soft-card-body">
-                <label class="soft-card-title" for="detail-trigger-input">Trigger Shortcut</label>
-                <div class="input-prefix-box">
-                  <span class="input-prefix-tag" id="trigger-prefix-display">/</span>
-                  <input type="text" id="detail-trigger-input" class="field-input field-mono" placeholder="omw" autocomplete="off">
-                </div>
-              </div>
-            </div>
+        <!-- Tour Button -->
+        <button class="btn btn-ghost btn-sm topbar-btn" id="btn-sidebar-tour" title="Take a tour of Snippo">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+          <span>Tour</span>
+        </button>
 
-            <!-- Folder Dropdown with + Add Category Button -->
-            <div class="soft-card">
-              <div class="soft-card-icon folder-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </div>
-              <div class="soft-card-body">
-                <label class="soft-card-title" for="detail-folder-select">Category</label>
-                <div class="folder-control-row">
-                  <select id="detail-folder-select" class="folder-dropdown-select">
-                    <!-- Options populated by manager.ts -->
-                  </select>
-                  <button type="button" class="btn-add-folder-pill" id="btn-add-category" title="Add new category">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>New</span>
-                  </button>
-                </div>
-                <input type="hidden" id="detail-folder-input" value="General">
-                <datalist id="folder-datalist"></datalist>
-              </div>
-            </div>
+        <!-- Primary + New Snippet Button -->
+        <button class="btn btn-primary btn-new-snippet" id="btn-sidebar-new" title="Create new snippet">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>New</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Subheader: Category Filter Tabs -->
+    <div class="workspace-subbar">
+      <div class="category-tabs-container" id="sidebar-folders-nav">
+        <!-- Dynamically rendered folder tabs e.g. All, General, + -->
+      </div>
+      <div class="subbar-stats">
+        <span class="total-stats-label" id="total-stats-label">0 snippets</span>
+      </div>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <main class="workspace-main-content" id="workspace-main-pane">
+      <!-- Snippets Cards Grid View (Main Page) -->
+      <section class="snippets-page-view" id="snippets-page-view">
+        <div class="page-view-header">
+          <div class="page-view-title-wrap">
+            <h1 class="page-view-title" id="current-category-heading">All Snippets</h1>
+            <span class="category-count-badge" id="current-category-count">0 snippets</span>
           </div>
         </div>
 
-        <!-- Section: Description -->
-        <div class="sheet-section">
-          <div class="soft-card full-width">
-            <div class="soft-card-icon desc-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="21" y1="6" x2="3" y2="6"></line>
-                <line x1="15" y1="12" x2="3" y2="12"></line>
-                <line x1="18" y1="18" x2="3" y2="18"></line>
+        <!-- Cards Grid Container -->
+        <div class="snippets-cards-grid" id="sidebar-snippet-list">
+          <!-- Dynamically populated snippet cards with Edit and Delete options -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="workspace-empty" id="workspace-empty-state" style="display: none;">
+          <div class="empty-content">
+            <div class="empty-icon">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                <line x1="6" y1="8" x2="6.01" y2="8"></line>
+                <line x1="10" y1="8" x2="10.01" y2="8"></line>
+                <line x1="14" y1="8" x2="14.01" y2="8"></line>
+                <line x1="18" y1="8" x2="18.01" y2="8"></line>
+                <line x1="6" y1="12" x2="6.01" y2="12"></line>
+                <line x1="10" y1="12" x2="10.01" y2="12"></line>
+                <line x1="14" y1="12" x2="14.01" y2="12"></line>
+                <line x1="18" y1="12" x2="18.01" y2="12"></line>
               </svg>
             </div>
-            <div class="soft-card-body">
-              <label class="soft-card-title" for="detail-desc-input">Description (Optional)</label>
-              <input type="text" id="detail-desc-input" class="field-input" placeholder="e.g. Quick on my way reply">
-            </div>
-          </div>
-        </div>
-
-        <!-- Section: Expansion Body -->
-        <div class="sheet-section" id="section-expansion">
-          <div class="section-label-row">
-            <span class="section-label">Expansion Content</span>
-            <span class="text-xs text-muted">Insert dynamic tags:</span>
-          </div>
-
-          <!-- Dynamic Variable Chips Toolbar -->
-          <div class="variables-toolbar" id="variables-toolbar"></div>
-
-          <div class="soft-card-textarea">
-            <textarea id="detail-body-textarea" class="field-textarea" rows="4" placeholder="Type text here... Use {date}, {time}, {day}, {year}, or {date:iso}"></textarea>
-          </div>
-
-          <!-- Live Output Preview: Shows resolved output in real-time -->
-          <div class="output-preview-container" id="output-preview-container">
-            <div class="output-preview-header">
-              <span class="output-preview-label">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                Output Preview
-              </span>
-              <span class="output-preview-sub">Variables resolved in real time</span>
-            </div>
-            <div class="output-preview-box" id="output-preview-box">
-              <span class="output-preview-placeholder">Live preview will appear as you type...</span>
-            </div>
+            <h2>No Snippets Found</h2>
+            <p class="text-muted">Create a new snippet or choose another category to view expansions.</p>
+            <button class="btn btn-primary" id="btn-empty-create">Create Snippet</button>
           </div>
         </div>
       </section>
 
-      <!-- Settings View Pane (2 Column Grid filling page) -->
+      <!-- Settings View Pane -->
       <section class="settings-view" id="settings-view" style="display: none;">
         <header class="settings-header">
           <div class="settings-header-titles">
             <h2>Settings & Preferences</h2>
             <p class="text-xs text-muted">Fine-tune triggers, themes, domains, and cloud-free storage.</p>
           </div>
-          <button class="btn btn-ghost btn-sm" id="btn-close-settings">← Back to Editor</button>
+          <button class="btn btn-ghost btn-sm" id="btn-close-settings">← Back to Snippets</button>
         </header>
 
         <div class="settings-content settings-grid-2">
@@ -435,33 +266,275 @@
           <span class="settings-powered-by">Powered by knzle</span>
         </div>
       </section>
-
-      <!-- Empty State when no snippet selected -->
-      <div class="workspace-empty" id="workspace-empty-state" style="display: none;">
-        <div class="empty-content">
-          <div class="empty-icon">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-              <line x1="6" y1="8" x2="6.01" y2="8"></line>
-              <line x1="10" y1="8" x2="10.01" y2="8"></line>
-              <line x1="14" y1="8" x2="14.01" y2="8"></line>
-              <line x1="18" y1="8" x2="18.01" y2="8"></line>
-              <line x1="6" y1="12" x2="6.01" y2="12"></line>
-              <line x1="10" y1="12" x2="10.01" y2="12"></line>
-              <line x1="14" y1="12" x2="14.01" y2="12"></line>
-              <line x1="18" y1="12" x2="18.01" y2="12"></line>
-              <line x1="7" y1="16" x2="17" y2="16"></line>
-            </svg>
-          </div>
-          <h2>Select or Create a Snippet</h2>
-          <p class="text-muted">Choose a snippet from the sidebar on the left or tap "+ New" to create one.</p>
-          <button class="btn btn-primary" id="btn-empty-create">Create New Snippet</button>
-        </div>
-      </div>
     </main>
   </div>
 
-  <!-- Interactive Test Snippet Modal -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM-TO-TOP SHEET MODAL (MOBILE UI STYLE FOR CREATING/EDITING) -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="sheet-modal-backdrop" id="snippet-editor-modal" style="display: none;">
+    <div class="snippet-bottom-sheet" id="snippet-bottom-sheet">
+      <!-- Sheet Drag Handle Pill -->
+      <div class="sheet-drag-handle" aria-hidden="true"></div>
+
+      <!-- Sheet Header -->
+      <header class="sheet-modal-header">
+        <div class="sheet-modal-header-left">
+          <h2 class="sheet-modal-title" id="sheet-modal-title">New Snippet</h2>
+          <div class="sheet-category-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span>Text Expansion</span>
+          </div>
+        </div>
+
+        <div class="sheet-modal-header-right">
+          <!-- Active Toggle Switch (Prominently visible when editing/creating) -->
+          <label class="switch-with-label" title="Enable or disable snippet">
+            <span class="text-xs text-muted">Active</span>
+            <label class="switch">
+              <input type="checkbox" id="detail-enabled-switch" checked>
+              <span class="slider"></span>
+            </label>
+          </label>
+
+          <!-- Explicit Delete Action inside modal (when editing) -->
+          <button class="btn-circle-action btn-delete-action" id="btn-delete-snippet" title="Delete this snippet" style="display: none;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+
+          <!-- Close Modal Button -->
+          <button class="btn-circle-action modal-close-btn" id="btn-close-sheet-modal" title="Close sheet">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Sheet Scrollable Form Body -->
+      <div class="sheet-modal-body">
+        <!-- Configuration Row: Trigger Keyword & Category -->
+        <div class="cards-grid-2">
+          <!-- Trigger / Keyword Input Card -->
+          <div class="soft-card">
+            <div class="soft-card-icon trigger-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="5" x2="5" y2="19"></line>
+              </svg>
+            </div>
+            <div class="soft-card-body">
+              <label class="soft-card-title" for="detail-trigger-input">Trigger Shortcut</label>
+              <div class="input-prefix-box">
+                <span class="input-prefix-tag" id="trigger-prefix-display">/</span>
+                <input type="text" id="detail-trigger-input" class="field-input field-mono" placeholder="omw" autocomplete="off" tabindex="1">
+              </div>
+              <span class="field-tab-hint">Press Tab to jump directly to Expansion Content</span>
+            </div>
+          </div>
+
+          <!-- Category Selection Card -->
+          <div class="soft-card">
+            <div class="soft-card-icon folder-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div class="soft-card-body">
+              <label class="soft-card-title" for="detail-folder-select">Category</label>
+              <div class="folder-control-row">
+                <select id="detail-folder-select" class="folder-dropdown-select" tabindex="3">
+                  <!-- Populated dynamically -->
+                </select>
+                <button type="button" class="btn-add-folder-pill" id="btn-add-category" title="Add new category" tabindex="4">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>New</span>
+                </button>
+              </div>
+              <input type="hidden" id="detail-folder-input" value="General">
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline Conflict Warning Banner -->
+        <div class="conflict-banner" id="conflict-warning-banner" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span id="conflict-warning-text">Conflict detected with another trigger</span>
+        </div>
+
+        <!-- Note: Description field is completely REMOVED as requested -->
+
+        <!-- Expansion Content Section -->
+        <div class="sheet-section" id="section-expansion">
+          <div class="section-label-row">
+            <span class="section-label">Expansion Content</span>
+            <span class="text-xs text-muted">Insert dynamic tags:</span>
+          </div>
+
+          <!-- Dynamic Variable Chips Toolbar -->
+          <div class="variables-toolbar" id="variables-toolbar"></div>
+
+          <!-- Expansion Body Textarea -->
+          <div class="soft-card-textarea">
+            <textarea id="detail-body-textarea" class="field-textarea" rows="4" placeholder="Type text here... Use {date}, {time}, {day}, {year}, or {date:iso}" tabindex="2"></textarea>
+          </div>
+
+          <!-- Live Output Preview -->
+          <div class="output-preview-container" id="output-preview-container">
+            <div class="output-preview-header">
+              <span class="output-preview-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Output Preview
+              </span>
+              <span class="output-preview-sub">Variables resolved in real time</span>
+            </div>
+            <div class="output-preview-box" id="output-preview-box">
+              <span class="output-preview-placeholder">Live preview will appear as you type...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sheet Footer Actions -->
+      <footer class="sheet-modal-footer">
+        <div class="sheet-footer-left">
+          <button class="btn-action-pill btn-test-pill" id="btn-open-test-modal" title="Test snippet live in a modal">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Test Snippet</span>
+          </button>
+        </div>
+
+        <div class="sheet-footer-right">
+          <button class="btn btn-secondary btn-sm" id="btn-cancel-sheet-modal">Cancel</button>
+          <button class="btn-action-pill btn-save-pill" id="btn-save-snippet" title="Save snippet">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Save Snippet</span>
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- ADD CATEGORY MODAL (REPLACES BROWSER PROMPT — SCREENSHOT 3 FIX)  -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="add-category-modal" style="display: none;">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3 class="modal-title">New Category</h3>
+          <p class="modal-subtitle">Create a folder to organize your snippets</p>
+        </div>
+        <button class="btn-circle-action modal-close-btn" id="btn-close-add-category-modal" title="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-form-group">
+          <label class="field-label" for="new-category-name-input">Category Name</label>
+          <input type="text" id="new-category-name-input" class="field-input field-category-name" placeholder="e.g. Work, Coding, Personal" autocomplete="off">
+          <span class="field-error-text" id="add-category-error" style="display: none;"></span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-add-category">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="btn-confirm-add-category">Create Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- DELETE CATEGORY MODAL (SCREENSHOT 2 FIX: DARK STYLING & NO SELF) -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="delete-category-modal" style="display: none;">
+    <div class="modal-dialog modal-dialog-category">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <h3 class="modal-title" id="delete-category-modal-title">Delete Category</h3>
+          <p class="modal-subtitle" id="delete-category-modal-subtitle">Manage snippets inside this category</p>
+        </div>
+        <button class="btn-circle-action modal-close-btn" id="btn-close-delete-category-modal" title="Cancel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div id="delete-category-options-wrap">
+          <p class="category-modal-desc" id="delete-category-warning-desc">
+            This category contains snippets. Choose what to do:
+          </p>
+
+          <!-- Option 1: Move snippets -->
+          <div class="category-choice-card active" id="card-choice-move">
+            <label class="category-choice-label">
+              <input type="radio" name="delete-category-action" value="move" checked id="radio-category-move">
+              <div class="category-choice-content">
+                <span class="category-choice-title">Move snippets to another category</span>
+                <span class="category-choice-hint">Keep all snippets in this category and switch them to another folder</span>
+              </div>
+            </label>
+            <div class="category-choice-dropdown" id="category-move-dropdown-wrap">
+              <label class="field-label" for="delete-category-target-select">DESTINATION CATEGORY:</label>
+              <select class="select-input category-select-styled" id="delete-category-target-select"></select>
+            </div>
+          </div>
+
+          <!-- Option 2: Delete snippets -->
+          <div class="category-choice-card category-choice-danger" id="card-choice-delete">
+            <label class="category-choice-label">
+              <input type="radio" name="delete-category-action" value="delete" id="radio-category-delete">
+              <div class="category-choice-content">
+                <span class="category-choice-title">Delete all snippets in this category</span>
+                <span class="category-choice-hint" id="delete-category-snippets-count">Permanently removes all snippets inside this category</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="delete-category-empty-msg" style="display: none;" class="category-modal-empty">
+          This category is empty. Deleting it will remove the category tab.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-delete-category">Cancel</button>
+        <button class="btn btn-danger btn-sm" id="btn-confirm-delete-category">Delete Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- INTERACTIVE TEST SNIPPET MODAL                                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
   <div class="modal-backdrop" id="test-snippet-modal" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -511,69 +584,12 @@
     </div>
   </div>
 
-  <!-- Delete Category Modal -->
-  <div class="modal-backdrop" id="delete-category-modal" style="display: none;">
-    <div class="modal-dialog modal-dialog-category">
-      <div class="modal-header">
-        <div class="modal-header-info">
-          <h3 class="modal-title" id="delete-category-modal-title">Delete Category</h3>
-          <p class="modal-subtitle" id="delete-category-modal-subtitle">Manage snippets inside this category</p>
-        </div>
-        <button class="btn-circle-action modal-close-btn" id="btn-close-delete-category-modal" title="Cancel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div id="delete-category-options-wrap">
-          <p class="category-modal-desc" id="delete-category-warning-desc">
-            This category contains snippets. Choose what to do with them:
-          </p>
-
-          <div class="category-choice-card active" id="card-choice-move">
-            <label class="category-choice-label">
-              <input type="radio" name="delete-category-action" value="move" checked id="radio-category-move">
-              <div class="category-choice-content">
-                <span class="category-choice-title">Move snippets to another category</span>
-                <span class="category-choice-hint">Keep all snippets in this category and switch them to another folder</span>
-              </div>
-            </label>
-            <div class="category-choice-dropdown" id="category-move-dropdown-wrap">
-              <label class="field-label" for="delete-category-target-select">Destination category:</label>
-              <select class="select-input" id="delete-category-target-select"></select>
-            </div>
-          </div>
-
-          <div class="category-choice-card category-choice-danger" id="card-choice-delete">
-            <label class="category-choice-label">
-              <input type="radio" name="delete-category-action" value="delete" id="radio-category-delete">
-              <div class="category-choice-content">
-                <span class="category-choice-title">Delete all snippets in this category</span>
-                <span class="category-choice-hint" id="delete-category-snippets-count">Permanently removes all snippets inside this category</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div id="delete-category-empty-msg" style="display: none;" class="category-modal-empty">
-          This category is empty. Deleting it will remove the category tab.
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary btn-sm" id="btn-cancel-delete-category">Cancel</button>
-        <button class="btn btn-danger btn-sm" id="btn-confirm-delete-category">Delete Category</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Guided Product Tour Overlay for First-Time Users -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- GUIDED ONBOARDING TOUR OVERLAY                                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
   <div class="tour-overlay" id="tour-overlay" style="display: none;"></div>
 
-  <!-- Targeted Tour Card Popup (z-index 10000 top layer) -->
+  <!-- Targeted Tour Card Popup -->
   <div class="tour-card" id="tour-card" style="display: none;">
     <div class="tour-pointer-arrow" id="tour-pointer-arrow"></div>
     <div class="tour-card-header">
@@ -610,7 +626,10 @@
     </div>
   </div>
 
-  <!-- Interactive Delete Confirmation Toast (Prompts every time unless disabled in Settings) -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- TOAST NOTIFICATIONS & CONFIRMATIONS                              -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- Interactive Delete Confirmation Toast -->
   <div class="toast-delete-confirm" id="toast-delete-confirm">
     <div class="toast-delete-content">
       <div class="toast-delete-icon">
@@ -630,13 +649,13 @@
     </div>
   </div>
 
-  <!-- Loss Aversion Principle: 8-second Undo Toast -->
+  <!-- Undo Toast -->
   <div class="toast-undo" id="delete-undo-toast">
     <span>Snippet deleted.</span>
     <button class="toast-undo-btn" id="btn-toast-undo">Undo (<span id="undo-countdown">8</span>s)</button>
   </div>
 
-  <!-- Transient Apple-style Save Notification Toast -->
+  <!-- Save Notification Toast -->
   <div class="toast-save" id="toast-save-notification">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="20 6 9 17 4 12"></polyline>
