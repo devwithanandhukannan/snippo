@@ -952,6 +952,19 @@ class ManagerWorkspace {
       this.showSnippetsView();
     });
 
+    // Clicking Snippo logo or text goes back to Snippets view
+    const brandHome = document.getElementById('btn-brand-home') || document.querySelector('.brand-group');
+    brandHome?.addEventListener('click', () => {
+      this.showSnippetsView();
+    });
+    brandHome?.addEventListener('keydown', (e: Event) => {
+      const ke = e as KeyboardEvent;
+      if (ke.key === 'Enter' || ke.key === ' ') {
+        ke.preventDefault();
+        this.showSnippetsView();
+      }
+    });
+
     // Replay tour buttons
     document.getElementById('btn-sidebar-tour')?.addEventListener('click', () => {
       this.startTour();
