@@ -11,8 +11,7 @@
     "scripting"
   ],
   "action": {
-    "default_popup": "ui/popup/index.html",
-    "default_title": "Snippo",
+    "default_title": "Snippo — Open Workspace",
     "default_icon": {
       "16": "assets/icons/icon-16.png",
       "48": "assets/icons/icon-48.png",

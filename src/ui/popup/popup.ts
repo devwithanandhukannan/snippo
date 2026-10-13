@@ -178,6 +178,11 @@ class PopupController {
       }
     });
 
+    // Open Manager on brand logo/title click
+    document.querySelector('.brand-group')?.addEventListener('click', () => {
+      this.openManager();
+    });
+
     // New Snippet
     document.getElementById('btn-quick-new')?.addEventListener('click', () => {
       this.openManager('new');

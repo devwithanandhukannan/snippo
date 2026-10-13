@@ -120,10 +120,14 @@ class VerbatimContentScript {
 
     // Fast tail retrieval (< 0.05ms)
     let tail = '';
-    if (type === 'plain-input') {
-      tail = PlainInputAdapter.getTail(element as HTMLInputElement | HTMLTextAreaElement);
-    } else if (type === 'rich-editable') {
-      tail = RichEditableAdapter.getTail(element);
+    try {
+      if (type === 'plain-input') {
+        tail = PlainInputAdapter.getTail(element as HTMLInputElement | HTMLTextAreaElement);
+      } else if (type === 'rich-editable') {
+        tail = RichEditableAdapter.getTail(element);
+      }
+    } catch {
+      return;
     }
 
     if (!tail) return;

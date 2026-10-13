@@ -15,14 +15,28 @@ export class EditorDetector {
     if (!el) return true;
 
     // Check input types
-    if (el instanceof HTMLInputElement) {
-      const type = (el.type || '').toLowerCase();
-      if (type === 'password' || type === 'hidden' || type === 'file') {
+    const isInput =
+      (typeof HTMLInputElement !== 'undefined' && el instanceof HTMLInputElement) ||
+      (el as any)?.tagName?.toLowerCase() === 'input';
+
+    if (isInput) {
+      const type = ((el as any).type || '').toLowerCase();
+      if (
+        type === 'password' ||
+        type === 'hidden' ||
+        type === 'file' ||
+        type === 'checkbox' ||
+        type === 'radio' ||
+        type === 'button' ||
+        type === 'submit' ||
+        type === 'reset' ||
+        type === 'image'
+      ) {
         return true;
       }
 
       // Check autocomplete attributes for sensitive financial data
-      const auto = (el.autocomplete || '').toLowerCase();
+      const auto = ((el as any).autocomplete || '').toLowerCase();
       if (
         auto.includes('cc-') ||
         auto.includes('credit-card') ||
@@ -65,10 +79,15 @@ export class EditorDetector {
       if (directEl instanceof HTMLInputElement || directEl instanceof HTMLTextAreaElement) {
         return { element: directEl, type: 'plain-input' };
       }
-      if (directEl.isContentEditable || directEl.getAttribute('contenteditable') === 'true') {
+      if (
+        directEl.isContentEditable ||
+        directEl.getAttribute('contenteditable') === 'true' ||
+        directEl.getAttribute('contenteditable') === ''
+      ) {
         return { element: directEl, type: 'rich-editable' };
       }
-      const editableAncestor = directEl.closest?.('[contenteditable="true"]') as HTMLElement | null;
+      const editableAncestor = (directEl.closest?.('[contenteditable]:not([contenteditable="false"])') ||
+        directEl.closest?.('[contenteditable="true"]')) as HTMLElement | null;
       if (editableAncestor && !this.isSkipListElement(editableAncestor)) {
         return { element: editableAncestor, type: 'rich-editable' };
       }
@@ -95,12 +114,17 @@ export class EditorDetector {
     }
 
     // Contenteditable elements (WhatsApp Web, Gmail, Notion, Slack, Medium, etc.)
-    if (active.isContentEditable || active.getAttribute('contenteditable') === 'true') {
+    if (
+      active.isContentEditable ||
+      active.getAttribute('contenteditable') === 'true' ||
+      active.getAttribute('contenteditable') === ''
+    ) {
       return { element: active, type: 'rich-editable' };
     }
 
     // Check if active element is a child inside a contenteditable parent
-    const editableAncestor = active.closest?.('[contenteditable="true"]') as HTMLElement | null;
+    const editableAncestor = (active.closest?.('[contenteditable]:not([contenteditable="false"])') ||
+      active.closest?.('[contenteditable="true"]')) as HTMLElement | null;
     if (editableAncestor) {
       return { element: editableAncestor, type: 'rich-editable' };
     }
@@ -115,7 +139,8 @@ export class EditorDetector {
             : sel.anchorNode.parentElement;
         const selEditable = (targetNode?.isContentEditable
           ? targetNode
-          : targetNode?.closest?.('[contenteditable="true"]')) as HTMLElement | null;
+          : (targetNode?.closest?.('[contenteditable]:not([contenteditable="false"])') ||
+             targetNode?.closest?.('[contenteditable="true"]'))) as HTMLElement | null;
 
         if (selEditable && !this.isSkipListElement(selEditable)) {
           return { element: selEditable, type: 'rich-editable' };

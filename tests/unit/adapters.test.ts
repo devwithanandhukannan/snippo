@@ -46,6 +46,46 @@ describe('PlainInputAdapter', () => {
     PlainInputAdapter.undo(input, context);
     expect(input.value).toBe('Hey /omw');
   });
+
+  it('handles restricted input type="email" where selectionEnd throws DOMException', () => {
+    // Simulates Chrome browser throwing InvalidStateError on type="email"
+    const emailInput: any = {
+      type: 'email',
+      value: '/email',
+      get selectionStart(): any {
+        throw new Error("InvalidStateError: The input element's type ('email') does not support selection.");
+      },
+      get selectionEnd(): any {
+        throw new Error("InvalidStateError: The input element's type ('email') does not support selection.");
+      },
+      setSelectionRange() {
+        throw new Error("InvalidStateError: The input element's type ('email') does not support selection.");
+      },
+      setRangeText() {
+        throw new Error("InvalidStateError: The input element's type ('email') does not support selection.");
+      },
+      dispatchEvent: () => true,
+    };
+
+    // 1. Check getTail extracts the trigger without throwing
+    const tail = PlainInputAdapter.getTail(emailInput, 10);
+    expect(tail).toBe('/email');
+
+    // 2. Check replaceTrigger expands properly without throwing
+    const context = PlainInputAdapter.replaceTrigger(
+      emailInput,
+      6,
+      { text: 'test@example.com' },
+      'snip-email',
+      '/email'
+    );
+    expect(emailInput.value).toBe('test@example.com');
+    expect(context.expandedText).toBe('test@example.com');
+
+    // 3. Check undo properly restores trigger
+    PlainInputAdapter.undo(emailInput, context);
+    expect(emailInput.value).toBe('/email');
+  });
 });
 
 describe('RichEditableAdapter', () => {
@@ -94,6 +134,20 @@ describe('EditorDetector', () => {
     } as unknown as HTMLInputElement;
 
     expect(ccInput.autocomplete.includes('cc-')).toBe(true);
+  });
+
+  it('detects button, checkbox, and submit inputs as non-text skip list elements', () => {
+    const btn = { tagName: 'input', type: 'button', getAttribute: () => null } as any;
+    expect(EditorDetector.isSkipListElement(btn)).toBe(true);
+
+    const checkbox = { tagName: 'input', type: 'checkbox', getAttribute: () => null } as any;
+    expect(EditorDetector.isSkipListElement(checkbox)).toBe(true);
+
+    const submit = { tagName: 'input', type: 'submit', getAttribute: () => null } as any;
+    expect(EditorDetector.isSkipListElement(submit)).toBe(true);
+
+    const email = { tagName: 'input', type: 'email', getAttribute: () => null } as any;
+    expect(EditorDetector.isSkipListElement(email)).toBe(false);
   });
 });
 

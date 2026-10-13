@@ -49,7 +49,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-// 2. Context Menu Handler
+// 2. Toolbar Action Click Handler (Directly opens All Snippets Workspace)
+chrome.action.onClicked.addListener(async () => {
+  openManagerPage();
+});
+
+// 3. Context Menu Handler
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'snippo-open-manager') {
     openManagerPage();

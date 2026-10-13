@@ -35,6 +35,18 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-group:hover {
+  opacity: 0.85;
+  transform: translateY(-0.5px);
+}
+
+.brand-group:active {
+  transform: scale(0.98);
 }
 
 .brand-logo {
