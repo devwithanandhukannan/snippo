@@ -49,7 +49,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-// 2. Toolbar Action Click Handler (Directly opens All Snippets Workspace)
+// 2. Toolbar Action Click Handler (Fallback if popup is disabled or unset)
 chrome.action.onClicked.addListener(async () => {
   openManagerPage();
 });
