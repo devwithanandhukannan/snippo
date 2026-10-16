@@ -301,6 +301,67 @@ export class RichEditableAdapter {
    * Executes trigger deletion and snippet replacement with multi-engine framework compatibility.
    * Works seamlessly with Lexical (WhatsApp Web), ProseMirror (Claude), Slate, Draft.js, and native DOM.
    */
+  /**
+   * Directly inserts text into contenteditable at current caret.
+   * Uses execCommand + clipboard paste fallback.
+   */
+  public static insertTextDirectly(element: HTMLElement, text: string): boolean {
+    if (document.activeElement !== element && !element.contains(document.activeElement)) {
+      try {
+        element.focus();
+      } catch {}
+    }
+
+    let inserted = false;
+    try {
+      inserted = document.execCommand('insertText', false, text);
+    } catch {
+      inserted = false;
+    }
+
+    if (!inserted) {
+      inserted = this.insertViaClipboard(element, text);
+    }
+
+    return inserted;
+  }
+
+  /**
+   * Clipboard Paste Simulation: Triggers framework clipboard handlers (Meta Lexical, WhatsApp Web, Slack).
+   */
+  public static insertViaClipboard(element: HTMLElement, replacement: string): boolean {
+    try {
+      const dt = new DataTransfer();
+      dt.setData('text/plain', replacement);
+
+      // 1. Dispatch beforeinput with insertFromPaste
+      try {
+        const beforeInput = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertFromPaste',
+          data: replacement,
+        });
+        element.dispatchEvent(beforeInput);
+      } catch {}
+
+      // 2. Dispatch paste event with DataTransfer
+      const pasteEvent = new ClipboardEvent('paste', {
+        clipboardData: dt,
+        bubbles: true,
+        cancelable: true,
+      });
+      const dispatched = element.dispatchEvent(pasteEvent);
+      return dispatched;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Executes trigger deletion and snippet replacement with multi-engine framework compatibility.
+   * Works seamlessly with Lexical (WhatsApp Web), ProseMirror (Claude), Slate, Draft.js, and native DOM.
+   */
   private static executeInsertion(
     element: HTMLElement,
     range: Range,
@@ -351,7 +412,18 @@ export class RichEditableAdapter {
       }
     }
 
-    // 6. Hard DOM Fallback: range replacement + synthetic InputEvent
+    // 6. Clipboard paste simulation (Crucial for Meta Lexical / WhatsApp Web / Slack)
+    if (!replaced) {
+      try {
+        sel.removeAllRanges();
+        sel.addRange(range);
+        replaced = this.insertViaClipboard(element, replacement);
+      } catch {
+        replaced = false;
+      }
+    }
+
+    // 7. Hard DOM Fallback: range replacement + synthetic InputEvent
     if (!replaced) {
       try {
         range.deleteContents();
@@ -384,9 +456,7 @@ export class RichEditableAdapter {
     // Note:
     // 1. Never dispatch synthetic 'beforeinput' or 'input' events when execCommand succeeded!
     //    execCommand('insertText') natively fires browser beforeinput and input events.
-    //    Dispatching synthetic events causes Lexical (WhatsApp Web) to duplicate the inserted text 3 times.
-    // 2. Never dispatch synthetic 'Escape' key events! In WhatsApp Web, Escape closes the active chat
-    //    and redirects to the "Voice and video calling is now available" screen.
+    // 2. Never dispatch synthetic 'Escape' key events! In WhatsApp Web, Escape closes the active chat.
 
     return replaced;
   }

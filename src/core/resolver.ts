@@ -9,9 +9,52 @@ import { ResolvedText } from './types';
 export interface ResolverContext {
   now?: Date;
   clipboardText?: string;
+  fillValues?: Record<string, string>;
 }
 
 export class TemplateResolver {
+  private static readonly BUILT_IN_VARS = new Set([
+    'date',
+    'date:short',
+    'date:iso',
+    'time',
+    'time:24',
+    'day',
+    'month',
+    'year',
+    'clipboard',
+    'cursor',
+  ]);
+
+  /**
+   * Extracts any fill-in/custom variable tags from template.
+   * e.g. {fill:Name}, {name}, {phone}
+   */
+  public static getFillInVariables(template: string): string[] {
+    if (!template) return [];
+    const matches = template.matchAll(/\{\{?([a-zA-Z0-9_:\s\-]+)\}?\}/g);
+    const seen = new Set<string>();
+    const fields: string[] = [];
+
+    for (const match of matches) {
+      const raw = match[1].trim();
+      const lower = raw.toLowerCase();
+      if (this.BUILT_IN_VARS.has(lower)) continue;
+
+      let fieldName = raw;
+      if (lower.startsWith('fill:')) {
+        fieldName = raw.slice(5).trim();
+      }
+
+      if (fieldName && !seen.has(fieldName.toLowerCase())) {
+        seen.add(fieldName.toLowerCase());
+        fields.push(fieldName);
+      }
+    }
+
+    return fields;
+  }
+
   /**
    * Resolves snippet template text with variables.
    * Handles both {variable} and {{variable}} patterns.
@@ -22,11 +65,27 @@ export class TemplateResolver {
     }
 
     const now = context.now || new Date();
+    const fillValues = context.fillValues || {};
     let cursorOffset: number | undefined = undefined;
 
-    // First replace dynamic date/time variables
-    let result = template.replace(/\{\{?([a-zA-Z0-9_:]+)\}?\}/g, (match, varName: string) => {
-      const lower = varName.toLowerCase();
+    // First replace dynamic date/time & fill-in variables
+    let result = template.replace(/\{\{?([a-zA-Z0-9_:\s\-]+)\}?\}/g, (match, rawName: string) => {
+      const trimmed = rawName.trim();
+      const lower = trimmed.toLowerCase();
+
+      // Check fill-in overrides first
+      let fillKey = trimmed;
+      if (lower.startsWith('fill:')) {
+        fillKey = trimmed.slice(5).trim();
+      }
+
+      // Exact or case-insensitive match in fillValues
+      const foundKey = Object.keys(fillValues).find(
+        (k) => k.toLowerCase() === fillKey.toLowerCase() || k.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (foundKey && fillValues[foundKey] !== undefined) {
+        return fillValues[foundKey];
+      }
 
       switch (lower) {
         case 'date':

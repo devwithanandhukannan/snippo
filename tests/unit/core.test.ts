@@ -74,6 +74,23 @@ describe('TemplateResolver', () => {
     const res = TemplateResolver.resolve(template, { clipboardText: 'https://example.com' });
     expect(res.text).toBe('Link: https://example.com');
   });
+
+  it('detects dynamic fill-in variables correctly', () => {
+    const template = 'Hello {name}, your order {fill:Order Number} is on its way on {date}!';
+    const fields = TemplateResolver.getFillInVariables(template);
+    expect(fields).toEqual(['name', 'Order Number']);
+  });
+
+  it('interpolates fill-in variables when values are provided', () => {
+    const template = 'Hello {name}, your code is {fill:Code}!';
+    const res = TemplateResolver.resolve(template, {
+      fillValues: {
+        name: 'Rahul',
+        Code: 'XYZ-99',
+      },
+    });
+    expect(res.text).toBe('Hello Rahul, your code is XYZ-99!');
+  });
 });
 
 describe('ConflictDetector', () => {

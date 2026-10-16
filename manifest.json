@@ -47,6 +47,13 @@
         "mac": "Alt+Shift+V"
       },
       "description": "Open Snippo Workspace"
+    },
+    "open-launcher": {
+      "suggested_key": {
+        "default": "Alt+Shift+K",
+        "mac": "Alt+Shift+K"
+      },
+      "description": "Open Snippo Quick Launcher"
     }
   },
   "omnibox": {

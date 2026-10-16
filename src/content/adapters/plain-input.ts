@@ -54,6 +54,41 @@ export class PlainInputAdapter {
     }
   }
 
+  public static insertTextDirectly(element: HTMLInputElement | HTMLTextAreaElement, text: string): boolean {
+    if (typeof document !== 'undefined' && document.activeElement !== element) {
+      try {
+        element.focus();
+      } catch {}
+    }
+    const isRestricted = this.isRestrictedInput(element);
+    let inserted = false;
+    if (!isRestricted) {
+      try {
+        inserted = document.execCommand('insertText', false, text);
+      } catch {
+        inserted = false;
+      }
+    }
+    if (!inserted) {
+      const end = this.getSelectionEndSafe(element);
+      const start = end;
+      if (!isRestricted && typeof element.setRangeText === 'function') {
+        try {
+          element.setRangeText(text, start, end, 'end');
+          inserted = true;
+        } catch {}
+      }
+      if (!inserted) {
+        element.value = element.value.slice(0, start) + text + element.value.slice(end);
+        inserted = true;
+      }
+      try {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      } catch {}
+    }
+    return inserted;
+  }
+
   public static replaceTrigger(
     element: HTMLInputElement | HTMLTextAreaElement,
     triggerLength: number,

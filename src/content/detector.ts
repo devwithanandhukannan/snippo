@@ -79,17 +79,18 @@ export class EditorDetector {
       if (directEl instanceof HTMLInputElement || directEl instanceof HTMLTextAreaElement) {
         return { element: directEl, type: 'plain-input' };
       }
+      // If directEl is inside a contenteditable or is contenteditable, resolve root editable element
+      const editableAncestor = (directEl.closest?.('[contenteditable]:not([contenteditable="false"])') ||
+        directEl.closest?.('[contenteditable="true"]')) as HTMLElement | null;
+      if (editableAncestor && !this.isSkipListElement(editableAncestor)) {
+        return { element: editableAncestor, type: 'rich-editable' };
+      }
       if (
         directEl.isContentEditable ||
         directEl.getAttribute('contenteditable') === 'true' ||
         directEl.getAttribute('contenteditable') === ''
       ) {
         return { element: directEl, type: 'rich-editable' };
-      }
-      const editableAncestor = (directEl.closest?.('[contenteditable]:not([contenteditable="false"])') ||
-        directEl.closest?.('[contenteditable="true"]')) as HTMLElement | null;
-      if (editableAncestor && !this.isSkipListElement(editableAncestor)) {
-        return { element: editableAncestor, type: 'rich-editable' };
       }
     }
 

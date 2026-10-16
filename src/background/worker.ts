@@ -9,21 +9,7 @@ import { TemplateResolver } from '../core/resolver';
 // 1. Install & Update Lifecycle
 chrome.runtime.onInstalled.addListener(async (details) => {
   await SnippetStore.init();
-
-  // Create context menus
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: 'snippo-open-manager',
-      title: 'Open Snippo Workspace',
-      contexts: ['action'],
-    });
-
-    chrome.contextMenus.create({
-      id: 'snippo-create-from-selection',
-      title: 'Save selection as Snippet...',
-      contexts: ['selection'],
-    });
-  });
+  await refreshContextMenus();
 
   if (details.reason === 'install') {
     // Open onboarding page on first install
@@ -54,7 +40,60 @@ chrome.action.onClicked.addListener(async () => {
   openManagerPage();
 });
 
-// 3. Context Menu Handler
+// 3. Dynamic Context Menu Management & Click Handler
+async function refreshContextMenus(): Promise<void> {
+  chrome.contextMenus.removeAll(async () => {
+    // 1. Toolbar action context
+    chrome.contextMenus.create({
+      id: 'snippo-open-manager',
+      title: 'Open Snippo Workspace',
+      contexts: ['action'],
+    });
+
+    // 2. Selection context
+    chrome.contextMenus.create({
+      id: 'snippo-create-from-selection',
+      title: 'Save selection as Snippet...',
+      contexts: ['selection'],
+    });
+
+    // 3. Editable context menu (Insert Snippets directly into any input or WhatsApp Web!)
+    chrome.contextMenus.create({
+      id: 'snippo-editable-root',
+      title: 'Snippo: Insert Snippet',
+      contexts: ['editable'],
+    });
+
+    chrome.contextMenus.create({
+      id: 'snippo-launcher-menu',
+      parentId: 'snippo-editable-root',
+      title: 'Search All Snippets... (Alt+Shift+K)',
+      contexts: ['editable'],
+    });
+
+    chrome.contextMenus.create({
+      id: 'snippo-sep-1',
+      parentId: 'snippo-editable-root',
+      type: 'separator',
+      contexts: ['editable'],
+    });
+
+    try {
+      const snippets = await SnippetStore.getAllSnippets();
+      const enabled = snippets.filter((s) => s.enabled !== false).slice(0, 6);
+      for (const s of enabled) {
+        const preview = s.description || s.body.replace(/\n/g, ' ').slice(0, 24);
+        chrome.contextMenus.create({
+          id: `snippo-insert-${s.id}`,
+          parentId: 'snippo-editable-root',
+          title: `${s.trigger} — ${preview}`,
+          contexts: ['editable'],
+        });
+      }
+    } catch {}
+  });
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'snippo-open-manager') {
     openManagerPage();
@@ -62,13 +101,32 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const text = encodeURIComponent(info.selectionText);
     const managerUrl = chrome.runtime.getURL(`ui/manager/index.html?prefill=${text}`);
     chrome.tabs.create({ url: managerUrl });
+  } else if (info.menuItemId === 'snippo-launcher-menu') {
+    if (tab?.id) {
+      chrome.tabs.sendMessage(tab.id, { type: 'OPEN_LAUNCHER' }).catch(() => {});
+    }
+  } else if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith('snippo-insert-')) {
+    const snippetId = info.menuItemId.replace('snippo-insert-', '');
+    const snip = await SnippetStore.getSnippetById(snippetId);
+    if (snip && tab?.id) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'INSERT_SNIPPET',
+        payload: { snippet: snip },
+      }).catch(() => {});
+      await SnippetStore.recordUsage(snip.id);
+    }
   }
 });
 
-// 3. Keyboard Commands
-chrome.commands.onCommand.addListener((command) => {
+// 4. Keyboard Commands
+chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'open-manager') {
     openManagerPage();
+  } else if (command === 'open-launcher') {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTab?.id) {
+      chrome.tabs.sendMessage(activeTab.id, { type: 'OPEN_LAUNCHER' }).catch(() => {});
+    }
   }
 });
 
@@ -232,6 +290,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'SNIPPETS_UPDATED': {
+          await refreshContextMenus();
           broadcastUpdate('SNIPPETS_UPDATED');
           sendResponse({ success: true });
           break;
