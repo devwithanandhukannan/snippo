@@ -46,7 +46,7 @@ async function refreshContextMenus(): Promise<void> {
     // 1. Toolbar action context
     chrome.contextMenus.create({
       id: 'snippo-open-manager',
-      title: 'Open Snippo Workspace',
+      title: 'Open SayMore Workspace',
       contexts: ['action'],
     });
 
@@ -60,7 +60,7 @@ async function refreshContextMenus(): Promise<void> {
     // 3. Editable context menu (Insert Snippets directly into any input or WhatsApp Web!)
     chrome.contextMenus.create({
       id: 'snippo-editable-root',
-      title: 'Snippo: Insert Snippet',
+      title: 'SayMore: Insert Snippet',
       contexts: ['editable'],
     });
 
@@ -132,7 +132,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 // 4. Omnibox Address Bar Integration (type 's' + Space in URL bar)
 chrome.omnibox.setDefaultSuggestion({
-  description: 'Snippo: Type a trigger (e.g. <match>omw</match> or <match>date</match>) to expand',
+  description: 'SayMore: Type a trigger (e.g. <match>omw</match> or <match>date</match>) to expand',
 });
 
 chrome.omnibox.onInputChanged.addListener(async (text, suggest) => {
@@ -234,7 +234,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'EXPAND_TRIGGER': {
           const settings = await SnippetStore.getSettings();
           if (settings.enabled === false) {
-            sendResponse({ success: false, error: 'Snippo is currently paused' });
+            sendResponse({ success: false, error: 'SayMore is currently paused' });
             break;
           }
           const { snippetId } = payload || {};

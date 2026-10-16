@@ -1,17 +1,17 @@
-# Chrome Web Store Listing — Snippo
+# Chrome Web Store Listing — SayMore
 
 > Last Updated: 2026-10-10
 
 ## Store Listing
 
 **Extension Name** [REQUIRED]
-Snippo: Type less. Say more.
+SayMore: Type less. Say more.
 
 **Short Description** [REQUIRED]
 Ultra-fast, 100% local text expansion. Type short triggers to expand templates instantly with zero keystrokes leaving your device.
 
 **Detailed Description** [REQUIRED]
-Snippo is an ultra-fast, local-first text expansion browser extension designed for privacy, speed, and focus.
+SayMore is an ultra-fast, local-first text expansion browser extension designed for privacy, speed, and focus.
 
 Type short triggers like /omw or ;sig anywhere on the web, and watch them instantly expand into full sentences, formatted email signatures, dynamic dates, or multi-line messages.
 

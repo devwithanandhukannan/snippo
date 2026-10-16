@@ -196,7 +196,7 @@ export class InLinePalette {
 
     container.innerHTML = `
       <div class="palette-header">
-        <span>Snippo Suggestions</span>
+        <span>SayMore Suggestions</span>
         <span>${this.currentSnippets.length} matches</span>
       </div>
       <ul class="palette-list">

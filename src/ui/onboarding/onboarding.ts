@@ -7,7 +7,7 @@ import { SnippetStore } from '../../data/store';
 
 class OnboardingController {
   private chosenTrigger = '/intro';
-  private chosenBody = "Hi there, I'm using Snippo to type faster and save time!";
+  private chosenBody = "Hi there, I'm using SayMore to type faster and save time!";
 
   public init(): void {
     this.bindStep1();

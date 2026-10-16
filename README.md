@@ -1,4 +1,4 @@
-# Snippo: Type less. Say more.
+# SayMore: Type less. Say more.
 
 > Ultra-fast, 100% local text expansion browser extension. Everything runs locally in the browser: no backend, no accounts, no keystroke leaves the device.
 

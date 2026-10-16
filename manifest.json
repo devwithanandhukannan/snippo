@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Snippo: Type less. Say more.",
-  "short_name": "Snippo",
+  "name": "SayMore: Type less. Say more.",
+  "short_name": "SayMore",
   "version": "1.0.0",
   "description": "Ultra-fast, 100% local text expansion extension. Type less and say more without keystrokes ever leaving your device.",
   "permissions": [
@@ -12,7 +12,7 @@
   ],
   "action": {
     "default_popup": "ui/popup/index.html",
-    "default_title": "Snippo",
+    "default_title": "SayMore",
     "default_icon": {
       "16": "assets/icons/icon-16.png",
       "48": "assets/icons/icon-48.png",
@@ -46,14 +46,14 @@
         "default": "Alt+Shift+V",
         "mac": "Alt+Shift+V"
       },
-      "description": "Open Snippo Workspace"
+      "description": "Open SayMore Workspace"
     },
     "open-launcher": {
       "suggested_key": {
         "default": "Alt+Shift+K",
         "mac": "Alt+Shift+K"
       },
-      "description": "Open Snippo Quick Launcher"
+      "description": "Open SayMore Quick Launcher"
     }
   },
   "omnibox": {

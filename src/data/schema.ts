@@ -35,7 +35,7 @@ export const INITIAL_SNIPPETS: Snippet[] = [
   {
     id: 'snip-email',
     trigger: '/email',
-    body: 'hello@snippo.local',
+    body: 'hello@saymore.local',
     description: 'Personal email address',
     folder: 'Personal',
     enabled: true,
