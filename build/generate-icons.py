@@ -1,71 +1,114 @@
 import os
+import subprocess
+import tempfile
+import numpy as np
 from PIL import Image, ImageDraw
 
 os.makedirs('assets/icons', exist_ok=True)
 
-# Generate icon-16.png, icon-32.png, icon-48.png, icon-128.png
-# We render at 4x resolution for perfect antialiasing and downscale with Lanczos
-for size in [16, 32, 48, 128]:
+# Master SVG for Concept 4: The Modern Expansion Quote (Quotation marks with cursor bar on Azure Blue squircle)
+SVG_CONTENT = """<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="squircle">
+      <rect x="24" y="24" width="464" height="464" rx="114" />
+    </clipPath>
+    <linearGradient id="bg" x1="120" y1="24" x2="392" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3296FD"/>
+      <stop offset="100%" stop-color="#1872DE"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Blue Squircle Background -->
+  <g clip-path="url(#squircle)">
+    <rect x="24" y="24" width="464" height="464" fill="url(#bg)"/>
+
+    <!-- 45-degree long shadow -->
+    <path d="M 268 164
+             L 488 384
+             L 488 488
+             L 348 488
+             L 100 280
+             L 170 274
+             L 196 274
+             L 268 274
+             Z"
+          fill="#1058B8"
+          fill-opacity="0.32" />
+
+    <!-- Additional shadow under cursor bar -->
+    <path d="M 280 382
+             L 386 488
+             L 488 488
+             L 488 438
+             L 418 382
+             Z"
+          fill="#0D4FA8"
+          fill-opacity="0.25" />
+
+    <!-- Left Quote Mark -->
+    <path d="M 98 274
+             L 98 214
+             C 98 162 128 136 162 136
+             L 170 164
+             C 146 166 132 182 132 208
+             L 168 208
+             L 168 274
+             Z"
+          fill="#FFFFFF" />
+
+    <!-- Right Quote Mark -->
+    <path d="M 196 274
+             L 196 214
+             C 196 162 226 136 260 136
+             L 268 164
+             C 244 166 230 182 230 208
+             L 266 208
+             L 266 274
+             Z"
+          fill="#FFFFFF" />
+
+    <!-- Text Cursor / Underscore -->
+    <rect x="278" y="348" width="140" height="34" rx="4" fill="#FFFFFF" />
+  </g>
+</svg>"""
+
+with tempfile.TemporaryDirectory() as tmpdir:
+    svg_path = os.path.join(tmpdir, 'icon.svg')
+    with open(svg_path, 'w') as f:
+        f.write(SVG_CONTENT)
+    
+    # Render master high-res raster using macOS qlmanage (WebKit native renderer)
+    subprocess.run(
+        ['qlmanage', '-t', '-s', '512', '-o', tmpdir, svg_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=True
+    )
+    
+    rendered_png = os.path.join(tmpdir, 'icon.svg.png')
+    master_img = Image.open(rendered_png).convert('RGBA')
+
+    # Apply true alpha transparency mask to eliminate opaque white canvas from qlmanage
     scale = 4
-    s = size * scale
-    img = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+    ms = 512 * scale
+    mask_hi = Image.new('L', (ms, ms), 0)
+    m_draw = ImageDraw.Draw(mask_hi)
+    m_draw.rounded_rectangle([24 * scale, 24 * scale, 488 * scale, 488 * scale], radius=114 * scale, fill=255)
+    mask = mask_hi.resize((512, 512), Image.Resampling.LANCZOS)
 
-    margin = max(1, s // 14)
-    radius = int(s * 0.28)
+    r, g, b, _ = master_img.split()
+    master_transparent = Image.merge('RGBA', (r, g, b, mask))
 
-    # 1. Background squircle with subtle two-tone split: #6D63E6 on top, #5B5BD6 on bottom
-    # Draw base bottom color
-    draw.rounded_rectangle(
-        [margin, margin, s - margin, s - margin],
-        radius=radius,
-        fill='#5B5BD6'
-    )
-    # Masked top half in #6D63E6
-    top_mask = Image.new('L', (s, s), 0)
-    draw_top_mask = ImageDraw.Draw(top_mask)
-    draw_top_mask.rounded_rectangle(
-        [margin, margin, s - margin, s - margin],
-        radius=radius,
-        fill=255
-    )
-    # Cut off bottom half of the mask
-    draw_top_mask.rectangle([0, s // 2, s, s], fill=0)
+    # Downscale using high-precision Lanczos resampling
+    for size in [16, 32, 48, 128]:
+        resized = master_transparent.resize((size, size), Image.Resampling.LANCZOS)
+        # Ensure corners have absolute zero alpha (prevent faint interpolation halo)
+        arr = np.array(resized)
+        arr[arr[:, :, 3] < 15, 3] = 0
+        cleaned = Image.fromarray(arr)
+        out_path = f'assets/icons/icon-{size}.png'
+        cleaned.save(out_path)
+        print(f'Generated {out_path} ({size}x{size})')
 
-    top_layer = Image.new('RGBA', (s, s), '#6D63E6')
-    img.paste(top_layer, (0, 0), top_mask)
+print('All SayMore icons generated successfully with transparent background.')
 
-    # Re-draw on combined image
-    draw = ImageDraw.Draw(img)
-
-    # 2. Dimensions for white forward slash '/' and green vertical bar '|'
-    stroke_w = int(s * 0.11)
-
-    # Slash coordinates: from top-right to bottom-left
-    slash_start = (int(s * 0.60), int(s * 0.26))
-    slash_end = (int(s * 0.36), int(s * 0.74))
-
-    # Green bar coordinates: vertical line on the right
-    green_start = (int(s * 0.74), int(s * 0.44))
-    green_end = (int(s * 0.74), int(s * 0.74))
-
-    # Helper to draw thick antialiased capsule line
-    def draw_capsule(p1, p2, color, w):
-        draw.line([p1, p2], fill=color, width=w)
-        r = w // 2
-        draw.ellipse([p1[0] - r, p1[1] - r, p1[0] + r, p1[1] + r], fill=color)
-        draw.ellipse([p2[0] - r, p2[1] - r, p2[0] + r, p2[1] + r], fill=color)
-
-    # Draw white slash '/'
-    draw_capsule(slash_start, slash_end, '#FFFFFF', stroke_w)
-
-    # Draw green vertical bar '|' (#3DDC97)
-    draw_capsule(green_start, green_end, '#3DDC97', stroke_w)
-
-    # Downscale with high-quality resampling
-    final_img = img.resize((size, size), Image.Resampling.LANCZOS)
-    out_path = f'assets/icons/icon-{size}.png'
-    final_img.save(out_path)
-    print(f'Generated {out_path} ({size}x{size})')
-
-print('All Snippo icons generated successfully.')
