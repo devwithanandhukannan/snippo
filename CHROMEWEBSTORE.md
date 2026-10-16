@@ -5,7 +5,7 @@
 ## Store Listing
 
 **Extension Name** [REQUIRED]
-SayMore: Type less. Say more.
+SayMore: Instant text expansion for everyday writing.
 
 **Short Description** [REQUIRED]
 Ultra-fast, 100% local text expansion. Type short triggers to expand templates instantly with zero keystrokes leaving your device.

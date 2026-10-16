@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "SayMore: Type less. Say more.",
+  "name": "SayMore: Instant text expansion for everyday writing.",
   "short_name": "SayMore",
   "version": "1.0.0",
-  "description": "Ultra-fast, 100% local text expansion extension. Type less and say more without keystrokes ever leaving your device.",
+  "description": "Ultra-fast, 100% local text expansion extension. Instant text expansion for everyday writing without keystrokes ever leaving your device.",
   "permissions": [
     "storage",
     "contextMenus",

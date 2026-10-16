@@ -1,7 +1,7 @@
 {
-  "name": "snippo",
+  "name": "saymore",
   "version": "1.0.0",
-  "description": "",
+  "description": "Instant text expansion for everyday writing.",
   "main": "index.js",
   "type": "module",
   "scripts": {
