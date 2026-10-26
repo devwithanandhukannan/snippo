@@ -88,8 +88,8 @@ export class QuickLauncher {
         color: rgba(255, 255, 255, 0.35);
       }
       .launcher-badge {
-        background: rgba(109, 99, 230, 0.25);
-        color: #A79BF8;
+        background: rgba(24, 114, 222, 0.22);
+        color: #389BFF;
         font-size: 11px;
         font-weight: 600;
         padding: 3px 8px;
@@ -112,8 +112,8 @@ export class QuickLauncher {
         transition: background 80ms ease;
       }
       .result-item.active {
-        background: rgba(91, 91, 214, 0.35);
-        border: 1px solid rgba(109, 99, 230, 0.3);
+        background: rgba(24, 114, 222, 0.32);
+        border: 1px solid rgba(50, 150, 253, 0.4);
       }
       .item-main {
         display: flex;

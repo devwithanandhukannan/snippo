@@ -71,7 +71,7 @@ body {
 }
 
 .brand-group:focus-visible {
-  outline: 2px solid var(--color-brand-primary, #6D63E6);
+  outline: 2px solid var(--color-brand-primary, #1872DE);
   outline-offset: 2px;
 }
 
@@ -118,7 +118,7 @@ body {
 }
 
 .search-box:focus-within {
-  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.4);
+  box-shadow: 0 0 0 2px rgba(37, 140, 251, 0.4);
 }
 
 .search-icon {
@@ -248,9 +248,9 @@ body {
 }
 
 .folder-tab-pill.active {
-  background-color: var(--color-brand-violet, #6D63E6);
+  background: linear-gradient(135deg, #3296FD 0%, #1872DE 100%);
   color: #FFFFFF !important;
-  border-color: var(--color-brand-violet, #6D63E6);
+  border-color: #1872DE;
 }
 
 .folder-tab-pill.active .folder-tab-btn {
@@ -563,9 +563,9 @@ body {
 }
 
 .btn-card-action.btn-card-edit:hover {
-  background-color: rgba(109, 99, 230, 0.12);
-  color: var(--color-brand-violet, #6D63E6);
-  border-color: rgba(109, 99, 230, 0.25);
+  background-color: rgba(24, 114, 222, 0.12);
+  color: var(--color-brand-blue, #1872DE);
+  border-color: rgba(50, 150, 253, 0.35);
 }
 
 .btn-card-action.btn-card-delete:hover {
@@ -843,8 +843,8 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background-color: rgba(109, 99, 230, 0.12);
-  color: var(--color-brand-violet);
+  background-color: rgba(24, 114, 222, 0.12);
+  color: var(--color-brand-blue, #1872DE);
 }
 
 .folder-icon {
@@ -878,14 +878,14 @@ input:checked + .slider:before {
 }
 
 .input-prefix-box:focus-within {
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.25);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 2px rgba(37, 140, 251, 0.25);
 }
 
 .input-prefix-tag {
   font-family: var(--font-mono);
   font-weight: 700;
-  color: var(--color-brand-violet);
+  color: var(--color-brand-blue-light, #3296FD);
   font-size: 13px;
 }
 
@@ -1010,9 +1010,9 @@ input:checked + .slider:before {
 }
 
 .pill-variable:hover {
-  background-color: rgba(109, 99, 230, 0.15);
-  color: var(--color-brand-violet);
-  border-color: rgba(109, 99, 230, 0.3);
+  background-color: rgba(24, 114, 222, 0.15);
+  color: var(--color-brand-blue, #1872DE);
+  border-color: rgba(50, 150, 253, 0.3);
 }
 
 .soft-card-textarea {
@@ -1024,8 +1024,8 @@ input:checked + .slider:before {
 }
 
 .soft-card-textarea:focus-within {
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.25);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 2px rgba(37, 140, 251, 0.25);
 }
 
 .field-textarea {
@@ -1124,8 +1124,8 @@ input:checked + .slider:before {
 }
 
 .btn-test-pill:hover {
-  background-color: rgba(109, 99, 230, 0.18);
-  color: var(--color-brand-violet);
+  background-color: rgba(24, 114, 222, 0.18);
+  color: var(--color-brand-blue, #1872DE);
 }
 
 .btn-save-pill {
@@ -1249,9 +1249,9 @@ input:checked + .slider:before {
 }
 
 .category-choice-card.active {
-  border-color: var(--color-brand-violet, #6d63e6) !important;
-  background-color: rgba(109, 99, 230, 0.09) !important;
-  box-shadow: 0 0 20px rgba(109, 99, 230, 0.15);
+  border-color: var(--color-brand-blue, #1872DE) !important;
+  background-color: rgba(24, 114, 222, 0.09) !important;
+  box-shadow: 0 0 20px rgba(24, 114, 222, 0.15);
 }
 
 .category-choice-card.category-choice-danger.active {
@@ -1269,7 +1269,7 @@ input:checked + .slider:before {
 
 .category-choice-label input[type="radio"] {
   margin-top: 3px;
-  accent-color: var(--color-brand-violet, #6d63e6);
+  accent-color: var(--color-brand-blue, #1872DE);
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -1321,8 +1321,8 @@ input:checked + .slider:before {
 }
 
 .category-select-styled:focus {
-  border-color: var(--color-brand-violet) !important;
-  box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.25) !important;
+  border-color: var(--color-brand-blue-light, #3296FD) !important;
+  box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.25) !important;
 }
 
 /* ════════════════════════════════════════════════════════════════ */
@@ -1366,8 +1366,8 @@ input:checked + .slider:before {
 }
 
 .field-category-name:focus {
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.25);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.25);
 }
 
 .field-error-text {
@@ -1376,21 +1376,21 @@ input:checked + .slider:before {
 }
 
 #btn-confirm-add-category {
-  background-color: var(--color-brand-violet, #6D63E6) !important;
+  background: linear-gradient(135deg, #3296FD 0%, #1872DE 100%) !important;
   color: #FFFFFF !important;
   border-radius: var(--radius-full) !important;
   font-weight: 600 !important;
   border: none !important;
   padding: 8px 18px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(109, 99, 230, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(24, 114, 222, 0.35) !important;
   transition: all var(--dur-fast) ease !important;
 }
 
 #btn-confirm-add-category:hover {
-  background-color: var(--color-brand-violet-dark, #5B5BD6) !important;
+  background: linear-gradient(135deg, #258BFB 0%, #1263C5 100%) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(109, 99, 230, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(24, 114, 222, 0.45) !important;
 }
 
 /* ═══════════════════════════════════════ */
@@ -1435,7 +1435,7 @@ input:checked + .slider:before {
 }
 
 .modal-test-input-card:focus-within {
-  box-shadow: 0 0 0 2px rgba(109, 99, 230, 0.35);
+  box-shadow: 0 0 0 2px rgba(37, 140, 251, 0.35);
 }
 
 .modal-test-textarea {
@@ -1541,8 +1541,8 @@ input:checked + .slider:before {
 .tour-target-spotlight {
   position: relative !important;
   z-index: 9999 !important;
-  outline: 2px solid var(--color-brand-violet) !important;
-  box-shadow: 0 0 0 5px rgba(109, 99, 230, 0.4), 0 0 25px rgba(109, 99, 230, 0.6) !important;
+  outline: 2px solid var(--color-brand-blue-light, #3296FD) !important;
+  box-shadow: 0 0 0 5px rgba(37, 140, 251, 0.4), 0 0 25px rgba(24, 114, 222, 0.6) !important;
   border-radius: var(--radius-md) !important;
 }
 

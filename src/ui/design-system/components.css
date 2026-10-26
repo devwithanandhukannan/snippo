@@ -56,27 +56,29 @@ h1, h2, h3, h4 {
 }
 
 .btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-brand-violet);
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-brand-blue, #1872DE);
 }
 
 .btn:active {
   transform: scale(0.97);
 }
 
-/* Primary: Brand violet signature pill */
+/* Primary: Brand azure blue signature pill (matches icon gradient) */
 .btn-primary {
-  background-color: var(--color-brand-violet, #6D63E6);
+  background: linear-gradient(135deg, #3296FD 0%, #1872DE 100%);
   color: #FFFFFF;
   border-radius: var(--radius-full);
   font-weight: 600;
   border: none;
+  box-shadow: 0 2px 8px rgba(24, 114, 222, 0.32);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-brand-violet-dark, #5B5BD6);
+  background: linear-gradient(135deg, #258BFB 0%, #1263C5 100%);
   color: #FFFFFF;
   opacity: 1;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 114, 222, 0.42);
 }
 
 /* Secondary */
@@ -136,8 +138,8 @@ h1, h2, h3, h4 {
 
 .search-box:focus-within {
   background-color: var(--bg-surface-elevated);
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.18);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.22);
 }
 
 .search-icon {
@@ -204,8 +206,8 @@ h1, h2, h3, h4 {
 .field-textarea:focus,
 .field-select:focus {
   background-color: var(--bg-surface);
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.18);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.22);
 }
 
 .field-mono {
@@ -225,12 +227,12 @@ h1, h2, h3, h4 {
 
 .input-prefix-box:focus-within {
   background-color: var(--bg-surface);
-  border-color: var(--color-brand-violet);
-  box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.18);
+  border-color: var(--color-brand-blue-light, #3296FD);
+  box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.22);
 }
 
 .input-prefix-tag {
-  color: var(--color-brand-violet);
+  color: var(--color-brand-blue-light, #3296FD);
   font-family: var(--font-mono);
   font-weight: 700;
   padding: 0 0 0 14px;
@@ -254,8 +256,8 @@ h1, h2, h3, h4 {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: 600;
-  background-color: rgba(109, 99, 230, 0.14);
-  color: var(--color-brand-violet);
+  background-color: var(--color-brand-badge-bg, rgba(24, 114, 222, 0.14));
+  color: var(--color-brand-badge-text, #389BFF);
   padding: 3px 8px;
   border-radius: var(--radius-xs);
   letter-spacing: -0.01em;
@@ -268,8 +270,8 @@ h1, h2, h3, h4 {
   font-weight: 700;
   padding: 6px 14px;
   border-radius: var(--radius-sm);
-  background-color: rgba(109, 99, 230, 0.18);
-  color: var(--color-brand-violet);
+  background-color: var(--color-brand-badge-bg, rgba(24, 114, 222, 0.18));
+  color: var(--color-brand-badge-text, #389BFF);
 }
 
 .badge-count {
@@ -357,7 +359,7 @@ input:checked + .slider:before {
 }
 
 .pill-variable:hover {
-  background-color: var(--color-brand-violet);
+  background-color: var(--color-brand-blue, #1872DE);
   color: #FFFFFF;
   border-color: transparent;
   transform: translateY(-1px);

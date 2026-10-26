@@ -20,7 +20,7 @@ export class InLinePalette {
     this.hostElement = document.createElement('div');
     this.hostElement.id = 'snippo-palette-host';
     this.hostElement.style.cssText =
-      'position: fixed; z-index: 2147483646; top: 0; left: 0; pointer-events: none; width: 0; height: 0; overflow: visible;';
+      'position: fixed; z-index: 2147483647; top: 0; left: 0; pointer-events: none; width: 0; height: 0; overflow: visible;';
 
     this.shadowRoot = this.hostElement.attachShadow({ mode: 'closed' });
 
@@ -77,8 +77,8 @@ export class InLinePalette {
         transition: background 80ms ease;
       }
       .palette-item.active {
-        background: rgba(91, 91, 214, 0.35);
-        border: 1px solid rgba(109, 99, 230, 0.4);
+        background: rgba(24, 114, 222, 0.32);
+        border: 1px solid rgba(50, 150, 253, 0.45);
       }
       .item-top {
         display: flex;
@@ -131,6 +131,7 @@ export class InLinePalette {
   public static show(
     matches: Snippet[],
     coords: CaretCoordinates | null,
+    targetElement: HTMLElement | null,
     onSelect: (snippet: Snippet) => void
   ): void {
     if (!matches || matches.length === 0) {
@@ -146,7 +147,7 @@ export class InLinePalette {
     this.onSelectCallback = onSelect;
     this.isVisible = true;
 
-    // Calculate position relative to caret
+    // Calculate position relative to caret or target input element
     let top = 100;
     let left = 100;
 
@@ -155,8 +156,16 @@ export class InLinePalette {
       left = Math.min(window.innerWidth - 310, Math.max(12, coords.x - 20));
 
       // Flip above if near bottom
-      if (top + 220 > window.innerHeight) {
-        top = Math.max(12, coords.y - 230);
+      if (top + 230 > window.innerHeight) {
+        top = Math.max(12, coords.y - 236);
+      }
+    } else if (targetElement && typeof targetElement.getBoundingClientRect === 'function') {
+      const rect = targetElement.getBoundingClientRect();
+      top = rect.bottom + 6;
+      left = Math.min(window.innerWidth - 310, Math.max(12, rect.left));
+
+      if (top + 230 > window.innerHeight) {
+        top = Math.max(12, rect.top - 236);
       }
     }
 
@@ -208,6 +217,11 @@ export class InLinePalette {
         <span><span class="kbd">Esc</span> Close</span>
       </div>
     `;
+
+    // Crucial: Prevent mousedown from stealing focus or blurring the editor/caret!
+    container.onmousedown = (e) => {
+      e.preventDefault();
+    };
 
     // Click handler on items
     container.querySelectorAll('.palette-item').forEach((item) => {

@@ -73,24 +73,58 @@ export class EditorDetector {
     element: HTMLElement | null;
     type: EditorType;
   } {
-    // 1. Direct check on event target if provided (handles search inputs, comboboxes, etc.)
+    // 1. Direct check on event target if provided (handles search inputs, comboboxes, recipient fields, etc.)
     const directEl = target as HTMLElement | null;
     if (directEl && !this.isSkipListElement(directEl)) {
-      if (directEl instanceof HTMLInputElement || directEl instanceof HTMLTextAreaElement) {
+      const isInput =
+        (typeof HTMLInputElement !== 'undefined' && directEl instanceof HTMLInputElement) ||
+        directEl.tagName?.toLowerCase() === 'input';
+      const isTextArea =
+        (typeof HTMLTextAreaElement !== 'undefined' && directEl instanceof HTMLTextAreaElement) ||
+        directEl.tagName?.toLowerCase() === 'textarea';
+
+      if (isInput || isTextArea) {
         return { element: directEl, type: 'plain-input' };
       }
+
+      // Check if target is inside an input/textarea
+      const parentInput = directEl.closest?.('input:not([type="hidden"]), textarea') as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
+      if (parentInput && !this.isSkipListElement(parentInput)) {
+        return { element: parentInput, type: 'plain-input' };
+      }
+
+      // Check if directEl is or is inside an element with role="textbox" or [g_editable="true"] (Gmail body, Notion, Slack)
+      const textboxEl = (directEl.getAttribute?.('role') === 'textbox'
+        ? directEl
+        : directEl.closest?.('[role="textbox"], [g_editable="true"]')) as HTMLElement | null;
+      if (textboxEl && !this.isSkipListElement(textboxEl)) {
+        return { element: textboxEl, type: 'rich-editable' };
+      }
+
       // If directEl is inside a contenteditable or is contenteditable, resolve root editable element
       const editableAncestor = (directEl.closest?.('[contenteditable]:not([contenteditable="false"])') ||
         directEl.closest?.('[contenteditable="true"]')) as HTMLElement | null;
       if (editableAncestor && !this.isSkipListElement(editableAncestor)) {
         return { element: editableAncestor, type: 'rich-editable' };
       }
+
       if (
         directEl.isContentEditable ||
-        directEl.getAttribute('contenteditable') === 'true' ||
-        directEl.getAttribute('contenteditable') === ''
+        directEl.getAttribute?.('contenteditable') === 'true' ||
+        directEl.getAttribute?.('contenteditable') === ''
       ) {
         return { element: directEl, type: 'rich-editable' };
+      }
+
+      // Check if directEl is a combobox container (e.g. Gmail "To" recipient row, search combobox)
+      const innerInput = directEl.querySelector?.(
+        'input:not([type="hidden"]):not([type="password"]), textarea'
+      ) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (innerInput && !this.isSkipListElement(innerInput)) {
+        return { element: innerInput, type: 'plain-input' };
       }
     }
 
@@ -110,15 +144,37 @@ export class EditorDetector {
     }
 
     // Standard input or textarea
-    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+    const isActiveInput =
+      (typeof HTMLInputElement !== 'undefined' && active instanceof HTMLInputElement) ||
+      active.tagName?.toLowerCase() === 'input';
+    const isActiveTextArea =
+      (typeof HTMLTextAreaElement !== 'undefined' && active instanceof HTMLTextAreaElement) ||
+      active.tagName?.toLowerCase() === 'textarea';
+
+    if (isActiveInput || isActiveTextArea) {
       return { element: active, type: 'plain-input' };
+    }
+
+    // Check role="textbox" or [g_editable="true"] on active element
+    if (
+      active.getAttribute?.('role') === 'textbox' ||
+      active.getAttribute?.('g_editable') === 'true'
+    ) {
+      return { element: active, type: 'rich-editable' };
+    }
+
+    const activeTextbox = active.closest?.(
+      '[role="textbox"], [g_editable="true"]'
+    ) as HTMLElement | null;
+    if (activeTextbox && !this.isSkipListElement(activeTextbox)) {
+      return { element: activeTextbox, type: 'rich-editable' };
     }
 
     // Contenteditable elements (WhatsApp Web, Gmail, Notion, Slack, Medium, etc.)
     if (
       active.isContentEditable ||
-      active.getAttribute('contenteditable') === 'true' ||
-      active.getAttribute('contenteditable') === ''
+      active.getAttribute?.('contenteditable') === 'true' ||
+      active.getAttribute?.('contenteditable') === ''
     ) {
       return { element: active, type: 'rich-editable' };
     }
@@ -128,6 +184,14 @@ export class EditorDetector {
       active.closest?.('[contenteditable="true"]')) as HTMLElement | null;
     if (editableAncestor) {
       return { element: editableAncestor, type: 'rich-editable' };
+    }
+
+    // If active element is a container containing an input
+    const activeInnerInput = active.querySelector?.(
+      'input:not([type="hidden"]):not([type="password"]), textarea'
+    ) as HTMLInputElement | HTMLTextAreaElement | null;
+    if (activeInnerInput && !this.isSkipListElement(activeInnerInput)) {
+      return { element: activeInnerInput, type: 'plain-input' };
     }
 
     // Selection fallback: if active is body or container, check where the selection caret actually is
@@ -141,7 +205,8 @@ export class EditorDetector {
         const selEditable = (targetNode?.isContentEditable
           ? targetNode
           : (targetNode?.closest?.('[contenteditable]:not([contenteditable="false"])') ||
-             targetNode?.closest?.('[contenteditable="true"]'))) as HTMLElement | null;
+             targetNode?.closest?.('[contenteditable="true"]') ||
+             targetNode?.closest?.('[role="textbox"], [g_editable="true"]'))) as HTMLElement | null;
 
         if (selEditable && !this.isSkipListElement(selEditable)) {
           return { element: selEditable, type: 'rich-editable' };

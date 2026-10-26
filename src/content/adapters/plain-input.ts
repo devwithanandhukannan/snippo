@@ -332,12 +332,44 @@ export class PlainInputAdapter {
     element: HTMLInputElement | HTMLTextAreaElement
   ): CaretCoordinates | null {
     try {
+      if (typeof element.getBoundingClientRect !== 'function') return null;
       const rect = element.getBoundingClientRect();
-      // Approximate caret position for standard input/textarea
+      const style =
+        typeof window !== 'undefined' && typeof window.getComputedStyle === 'function'
+          ? window.getComputedStyle(element)
+          : null;
+      const paddingLeft = style ? parseFloat(style.paddingLeft) || 12 : 12;
+
+      let caretX = rect.left + paddingLeft;
+
+      try {
+        const val = element.value || '';
+        const end = this.getSelectionEndSafe(element);
+        const textBeforeCaret = val.slice(0, Math.min(end, val.length));
+
+        if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+          if (ctx && style) {
+            ctx.font = `${style.fontWeight || '400'} ${style.fontSize || '14px'} ${
+              style.fontFamily || 'sans-serif'
+            }`;
+            const textWidth = ctx.measureText(textBeforeCaret).width;
+            const scrollLeft = element.scrollLeft || 0;
+            caretX = rect.left + paddingLeft + textWidth - scrollLeft;
+          }
+        }
+      } catch {}
+
+      const safeX = Math.min(
+        Math.max(rect.left + paddingLeft, caretX),
+        rect.right ? rect.right - 10 : caretX
+      );
+
       return {
-        x: rect.left + 16,
-        y: rect.top - 8,
-        height: 24,
+        x: safeX,
+        y: rect.top,
+        height: rect.height || 24,
       };
     } catch {
       return null;

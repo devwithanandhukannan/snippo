@@ -49,9 +49,15 @@
   --dur-slow: 320ms;
   --dur-spring: 500ms;
 
-  /* Brand Accents */
-  --color-brand-violet: #6D63E6;
-  --color-brand-violet-dark: #5B5BD6;
+  /* Brand Accents - Azure Blue (matches icon #3296FD -> #1872DE) */
+  --color-brand-blue: #1872DE;
+  --color-brand-blue-hover: #125EB8;
+  --color-brand-blue-light: #3296FD;
+  --color-brand-primary: #1872DE;
+  --color-brand-primary-hover: #125EB8;
+  --color-brand-primary-light: #3296FD;
+  --color-brand-violet: #1872DE; /* Backward-compatibility alias */
+  --color-brand-violet-dark: #125EB8;
   --color-brand-green: #10B981;
 }
 
@@ -63,6 +69,9 @@
   --color-accent-hover: #000000;
   --color-accent-subtle: rgba(0, 0, 0, 0.04);
   --color-accent-text: #FFFFFF;
+
+  --color-brand-badge-bg: rgba(24, 114, 222, 0.12);
+  --color-brand-badge-text: #1872DE;
 
   --bg-app: #F1F4F8;
   --bg-surface: #FFFFFF;
@@ -80,7 +89,7 @@
   /* Absolutely NO borders */
   --border-hairline: transparent;
   --border-subtle: transparent;
-  --border-focus: #10B981;
+  --border-focus: #1872DE;
 
   --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.03);
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.04);
@@ -111,6 +120,9 @@
     --color-accent-subtle: rgba(255, 255, 255, 0.08);
     --color-accent-text: #0A0B0E;
 
+    --color-brand-badge-bg: rgba(50, 150, 253, 0.18);
+    --color-brand-badge-text: #389BFF;
+
     --bg-app: #18191E;
     --bg-surface: #24262E;
     --bg-surface-elevated: #202229;
@@ -127,7 +139,7 @@
     /* Absolutely NO borders */
     --border-hairline: transparent;
     --border-subtle: transparent;
-    --border-focus: #10B981;
+    --border-focus: #3296FD;
 
     --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4);
     --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.45);
@@ -156,6 +168,9 @@
   --color-accent-subtle: rgba(255, 255, 255, 0.08);
   --color-accent-text: #0A0B0E;
 
+  --color-brand-badge-bg: rgba(50, 150, 253, 0.18);
+  --color-brand-badge-text: #389BFF;
+
   --bg-app: #18191E;
   --bg-surface: #24262E;
   --bg-surface-elevated: #202229;
@@ -172,7 +187,7 @@
   /* Absolutely NO borders */
   --border-hairline: transparent;
   --border-subtle: transparent;
-  --border-focus: #10B981;
+  --border-focus: #3296FD;
 
   --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.45);

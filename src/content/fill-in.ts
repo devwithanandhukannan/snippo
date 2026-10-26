@@ -71,8 +71,8 @@ export class FillInDialog {
         gap: 8px;
       }
       .fillin-badge {
-        background: rgba(109, 99, 230, 0.28);
-        color: #3DDC97;
+        background: rgba(24, 114, 222, 0.24);
+        color: #3296FD;
         font-size: 11px;
         font-weight: 700;
         padding: 3px 8px;
@@ -125,8 +125,8 @@ export class FillInDialog {
         transition: border-color 140ms ease, box-shadow 140ms ease;
       }
       .field-input:focus {
-        border-color: #6D63E6;
-        box-shadow: 0 0 0 3px rgba(109, 99, 230, 0.3);
+        border-color: #3296FD;
+        box-shadow: 0 0 0 3px rgba(37, 140, 251, 0.3);
       }
       .fillin-actions {
         display: flex;
@@ -149,7 +149,7 @@ export class FillInDialog {
         background: rgba(255, 255, 255, 0.16);
       }
       .btn-submit {
-        background: #5B5BD6;
+        background: linear-gradient(135deg, #3296FD 0%, #1872DE 100%);
         border: none;
         color: #FFFFFF;
         padding: 6px 16px;
@@ -160,9 +160,13 @@ export class FillInDialog {
         display: flex;
         align-items: center;
         gap: 4px;
+        box-shadow: 0 2px 8px rgba(24, 114, 222, 0.32);
+        transition: transform 80ms ease, box-shadow 80ms ease;
       }
       .btn-submit:hover {
-        background: #6D63E6;
+        background: linear-gradient(135deg, #258BFB 0%, #1263C5 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(24, 114, 222, 0.42);
       }
       .kbd-hint {
         font-size: 10px;

@@ -86,6 +86,28 @@ describe('PlainInputAdapter', () => {
     PlainInputAdapter.undo(emailInput, context);
     expect(emailInput.value).toBe('/email');
   });
+
+  it('computes caret coordinates with element dimensions and safe margins', () => {
+    const input = {
+      value: 'hello /pan',
+      selectionEnd: 10,
+      getBoundingClientRect: () => ({
+        left: 100,
+        top: 20,
+        right: 400,
+        bottom: 60,
+        width: 300,
+        height: 40,
+      }),
+      scrollLeft: 0,
+    } as any;
+
+    const coords = PlainInputAdapter.getCaretCoordinates(input);
+    expect(coords).not.toBeNull();
+    expect(coords?.y).toBe(20);
+    expect(coords?.height).toBe(40);
+    expect(coords?.x).toBeGreaterThan(100);
+  });
 });
 
 describe('RichEditableAdapter', () => {
@@ -148,6 +170,31 @@ describe('EditorDetector', () => {
 
     const email = { tagName: 'input', type: 'email', getAttribute: () => null } as any;
     expect(EditorDetector.isSkipListElement(email)).toBe(false);
+  });
+
+  it('detects input inside combobox container (e.g. Gmail recipient field)', () => {
+    const inputChild = { tagName: 'input', type: 'text', getAttribute: () => null } as any;
+    const comboboxContainer = {
+      tagName: 'div',
+      getAttribute: (attr: string) => (attr === 'role' ? 'combobox' : null),
+      querySelector: (selector: string) => (selector.includes('input') ? inputChild : null),
+    } as any;
+
+    const res = EditorDetector.detectCurrentEditor(comboboxContainer);
+    expect(res.type).toBe('plain-input');
+    expect(res.element).toBe(inputChild);
+  });
+
+  it('detects role="textbox" and g_editable="true" as rich-editable', () => {
+    const gmailBody = {
+      tagName: 'div',
+      getAttribute: (attr: string) => (attr === 'role' ? 'textbox' : attr === 'g_editable' ? 'true' : null),
+      closest: () => null,
+    } as any;
+
+    const res = EditorDetector.detectCurrentEditor(gmailBody);
+    expect(res.type).toBe('rich-editable');
+    expect(res.element).toBe(gmailBody);
   });
 });
 

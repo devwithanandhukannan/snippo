@@ -57,12 +57,19 @@ export class InPageChip {
         opacity: 1;
         transform: translateY(0) scale(1);
       }
+      .snippo-chip.visible:hover {
+        opacity: 0.35;
+      }
+      .snippo-chip.visible:hover .chip-undo-btn,
+      .snippo-chip.visible .chip-undo-btn:hover {
+        opacity: 1;
+      }
       .chip-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(109, 99, 230, 0.28);
-        color: #3DDC97;
+        background: rgba(24, 114, 222, 0.24);
+        color: #3296FD;
         font-size: 10px;
         font-weight: 700;
         padding: 2px 6px;
@@ -105,12 +112,14 @@ export class InPageChip {
 
   /**
    * Shows the in-page pill near the caret or in a fallback viewport corner.
+   * Ensures the chip never occludes the input field content.
    */
   public static show(
     trigger: string,
     coords: CaretCoordinates | null,
     onUndo: () => void,
-    durationMs = 1800
+    durationMs = 1800,
+    targetElement?: HTMLElement | null
   ): void {
     this.ensureContainer();
     if (!this.shadowRoot) return;
@@ -130,12 +139,64 @@ export class InPageChip {
     chip.className = 'snippo-chip';
 
     // Position calculation
+    const CHIP_HEIGHT = 28;
+    const GAP = 8;
     let top = window.innerHeight - 56;
     let left = window.innerWidth - 220;
 
-    if (coords && coords.x > 0 && coords.y > 0) {
-      top = Math.max(16, coords.y - 34);
-      left = Math.min(window.innerWidth - 200, Math.max(16, coords.x));
+    const elRect =
+      targetElement && typeof targetElement.getBoundingClientRect === 'function'
+        ? targetElement.getBoundingClientRect()
+        : null;
+
+    if (elRect && elRect.width > 0 && elRect.height > 0) {
+      const hasSpaceAbove = elRect.top >= CHIP_HEIGHT + GAP + 6;
+      const hasSpaceBelow = window.innerHeight - elRect.bottom >= CHIP_HEIGHT + GAP + 6;
+
+      if (hasSpaceAbove) {
+        top = elRect.top - CHIP_HEIGHT - GAP;
+      } else if (hasSpaceBelow) {
+        // Automatically flip below the element when near top of viewport (e.g. Amazon search)
+        top = elRect.bottom + GAP;
+      } else {
+        top = window.innerHeight - 56;
+      }
+
+      // Horizontal alignment: position near caret if known, or right-aligned within element bounds
+      if (coords && coords.x > 0) {
+        left = Math.min(window.innerWidth - 220, Math.max(12, coords.x - 20));
+      } else {
+        left = Math.min(window.innerWidth - 220, Math.max(12, elRect.left + 16));
+      }
+
+      // Hard Collision Prevention: The chip [top, top + CHIP_HEIGHT] must NEVER overlap [elRect.top, elRect.bottom]
+      const chipTop = top;
+      const chipBottom = top + CHIP_HEIGHT;
+      const collidesWithElement = !(chipBottom < elRect.top || chipTop > elRect.bottom);
+      if (collidesWithElement) {
+        if (hasSpaceBelow) {
+          top = elRect.bottom + GAP;
+        } else if (hasSpaceAbove) {
+          top = elRect.top - CHIP_HEIGHT - GAP;
+        } else {
+          top = window.innerHeight - 56;
+          left = window.innerWidth - 220;
+        }
+      }
+    } else if (coords && coords.x > 0 && coords.y > 0) {
+      const coordsHeight = coords.height || 24;
+      const approxTop = coords.y;
+      const approxBottom = coords.y + coordsHeight;
+
+      if (approxTop >= CHIP_HEIGHT + GAP + 6) {
+        top = approxTop - CHIP_HEIGHT - GAP;
+      } else if (window.innerHeight - approxBottom >= CHIP_HEIGHT + GAP + 6) {
+        top = approxBottom + GAP;
+      } else {
+        top = window.innerHeight - 56;
+      }
+
+      left = Math.min(window.innerWidth - 220, Math.max(12, coords.x - 20));
     }
 
     chip.style.top = `${top}px`;

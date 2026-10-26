@@ -11,6 +11,7 @@
 import { TriggerMatcher } from '../core/matcher';
 import { TemplateResolver } from '../core/resolver';
 import { CaretCoordinates, EditorType, ExpansionUndoContext, Settings, Snippet, TriggerIndex } from '../core/types';
+import { DEFAULT_SETTINGS, INITIAL_SNIPPETS } from '../data/schema';
 import { PlainInputAdapter } from './adapters/plain-input';
 import { RichEditableAdapter } from './adapters/rich-editable';
 import { InPageChip } from './chip';
@@ -22,8 +23,8 @@ import { ExpansionUndoManager } from './undo';
 
 class VerbatimContentScript {
   private matcher: TriggerMatcher = new TriggerMatcher();
-  private settings: Settings | null = null;
-  private allSnippets: Snippet[] = [];
+  private settings: Settings = DEFAULT_SETTINGS;
+  private allSnippets: Snippet[] = [...INITIAL_SNIPPETS];
   private isExcluded = false;
   private isInitialized = false;
   private isExpanding = false;
@@ -35,14 +36,23 @@ class VerbatimContentScript {
       if (this.isInitialized) return;
       this.isInitialized = true;
 
+      // Seed in-memory matcher with defaults immediately so typing is never lost
+      const initialIndex: TriggerIndex = {};
+      for (const s of INITIAL_SNIPPETS) {
+        initialIndex[s.trigger] = { id: s.id, trigger: s.trigger, enabled: s.enabled, folder: s.folder };
+      }
+      this.matcher.updateIndex(initialIndex);
+
       // Check context validity
       if (typeof chrome === 'undefined' || !chrome.runtime?.id) {
         return;
       }
 
-      await this.syncState();
+      // Attach listeners immediately so initial keystrokes are never dropped
       this.attachListeners();
       this.listenForBroadcasts();
+
+      await this.syncState();
     } catch {
       // Gracefully handle extension context invalidated or initial disconnect
     }
@@ -52,6 +62,32 @@ class VerbatimContentScript {
     if (!chrome.runtime?.id) return;
 
     try {
+      // 1. Direct Chrome Storage Local Read (immediate IPC, zero background wake latency)
+      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        const stored = await chrome.storage.local.get([
+          'verbatim_settings_v1',
+          'verbatim_trigger_index_v1',
+          'verbatim_snippets_v1',
+        ]);
+
+        if (stored.verbatim_settings_v1) {
+          this.settings = { ...DEFAULT_SETTINGS, ...(stored.verbatim_settings_v1 as Settings) };
+          const host = window.location.hostname.toLowerCase();
+          this.isExcluded = (this.settings?.excludedDomains || []).some(
+            (d) => host === d.toLowerCase() || host.endsWith('.' + d.toLowerCase())
+          );
+        }
+
+        if (stored.verbatim_trigger_index_v1) {
+          this.matcher.updateIndex(stored.verbatim_trigger_index_v1 as TriggerIndex);
+        }
+
+        if (Array.isArray(stored.verbatim_snippets_v1) && stored.verbatim_snippets_v1.length > 0) {
+          this.allSnippets = stored.verbatim_snippets_v1 as Snippet[];
+        }
+      }
+
+      // 2. Query worker for any updates
       const response: any = await this.sendMessagePromise('GET_SETTINGS');
       if (response?.data) {
         this.settings = response.data;
@@ -76,11 +112,11 @@ class VerbatimContentScript {
       if (indexRes?.data) {
         this.matcher.updateIndex(indexRes.data as TriggerIndex);
       }
-      if (allRes?.data) {
+      if (allRes?.data && Array.isArray(allRes.data) && allRes.data.length > 0) {
         this.allSnippets = allRes.data as Snippet[];
       }
     } catch {
-      // Ignore background sync errors
+      // Keep existing memory state
     }
   }
 
@@ -206,12 +242,12 @@ class VerbatimContentScript {
    */
   private checkInLinePalette(tail: string, element: HTMLElement, type: EditorType): void {
     if (this.allSnippets.length === 0) {
-      InLinePalette.dismiss();
-      return;
+      this.allSnippets = [...INITIAL_SNIPPETS];
     }
 
     // Find trigger token at caret end (e.g. "/em" or ";o" or ":date" or ",,sig")
-    const match = tail.match(/(?:^|\s)([/;:!]|,,)([a-zA-Z0-9_\-]*)$/);
+    // Allow start of string, or preceded by whitespace, comma, semicolon, quotes, or brackets
+    const match = tail.match(/(?:^|[\s,;("'])([/;:!]|,,)([a-zA-Z0-9_\-]*)$/);
     if (!match) {
       InLinePalette.dismiss();
       return;
@@ -225,9 +261,17 @@ class VerbatimContentScript {
     const matches = this.allSnippets.filter((s) => {
       if (s.enabled === false) return false;
       const trigLower = s.trigger.toLowerCase();
+
+      // If user only typed the prefix (e.g. "/")
+      if (query.length === 0) {
+        return trigLower.startsWith(prefix);
+      }
+
+      // If user typed prefix + query (e.g. "/em" or "/email")
+      const cleanTrig = trigLower.replace(/^[/;:!]|,,/, '');
       return (
         trigLower.startsWith(fullTyped.toLowerCase()) ||
-        trigLower.replace(/^[/;:!]|,,/, '').startsWith(query) ||
+        cleanTrig.startsWith(query) ||
         (s.description && s.description.toLowerCase().includes(query))
       );
     });
@@ -237,6 +281,13 @@ class VerbatimContentScript {
       return;
     }
 
+    // Sort matches: items starting with the typed text appear first
+    matches.sort((a, b) => {
+      const aStarts = a.trigger.toLowerCase().startsWith(fullTyped.toLowerCase()) ? 0 : 1;
+      const bStarts = b.trigger.toLowerCase().startsWith(fullTyped.toLowerCase()) ? 0 : 1;
+      return aStarts - bStarts;
+    });
+
     // Get caret coordinates
     let coords: CaretCoordinates | null = null;
     if (type === 'plain-input') {
@@ -245,7 +296,7 @@ class VerbatimContentScript {
       coords = RichEditableAdapter.getCaretCoordinates(element);
     }
 
-    InLinePalette.show(matches, coords, (snippet) => {
+    InLinePalette.show(matches, coords, element, (snippet) => {
       this.expandTrigger(snippet.id, fullTyped.length, fullTyped, element, type);
     });
   }
@@ -264,9 +315,20 @@ class VerbatimContentScript {
     this.isExpanding = true;
 
     try {
-      const snipRes: any = await this.sendMessagePromise('EXPAND_TRIGGER', { snippetId });
-      if (!snipRes?.data) return;
-      const snippet: Snippet = snipRes.data;
+      // 1. Instant in-memory lookup first (0ms latency, never blocked by asleep service worker)
+      let snippet = this.allSnippets.find((s) => s.id === snippetId);
+
+      if (!snippet) {
+        const snipRes: any = await this.sendMessagePromise('EXPAND_TRIGGER', { snippetId });
+        if (snipRes?.data) {
+          snippet = snipRes.data;
+        }
+      } else {
+        // Asynchronously notify background worker to record usage
+        this.sendMessagePromise('EXPAND_TRIGGER', { snippetId }).catch(() => {});
+      }
+
+      if (!snippet) return;
 
       // Check if template has fill-in variables (e.g. {name}, {phone}, {fill:Customer})
       const fillFields = TemplateResolver.getFillInVariables(snippet.body);
@@ -340,7 +402,8 @@ class VerbatimContentScript {
           snippet.trigger,
           coords,
           () => ExpansionUndoManager.undo(),
-          this.settings?.chipDurationMs || 1800
+          this.settings?.chipDurationMs || 1800,
+          element
         );
       }
     }
