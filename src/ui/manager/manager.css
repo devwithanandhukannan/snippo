@@ -1914,7 +1914,24 @@ input:checked + .slider:before {
 }
 
 .privacy-callout {
-  border-left: 3px solid var(--color-brand-green);
+  background: var(--color-brand-blue, #1872DE) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 16px rgba(24, 114, 222, 0.22);
+}
+
+.privacy-callout h3 {
+  color: #FFFFFF !important;
+}
+
+.privacy-callout p,
+.privacy-callout .text-sm {
+  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 1.5;
+}
+
+.privacy-callout svg {
+  stroke: #FFFFFF !important;
 }
 
 .settings-footer {
