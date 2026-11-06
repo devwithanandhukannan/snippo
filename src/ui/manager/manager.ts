@@ -34,6 +34,7 @@ class ManagerWorkspace {
   private deletedDefaultFolders = new Set<string>();
   private categoryPendingDelete = '';
   private saveToastTimer = null as any;
+  private isSaving = false;
 
   // Onboarding Tour state
   private currentTourStep = 0;
@@ -771,10 +772,13 @@ class ManagerWorkspace {
   }
 
   private async saveCurrentSnippet(): Promise<void> {
+    if (this.isSaving) return;
+
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
     const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement;
     const bodyTextarea = document.getElementById('detail-body-textarea') as HTMLTextAreaElement;
     const enabledSwitch = document.getElementById('detail-enabled-switch') as HTMLInputElement;
+    const saveBtn = document.getElementById('btn-save-snippet') as HTMLButtonElement | null;
 
     const keyword = triggerInput?.value.trim();
     if (!keyword) {
@@ -787,53 +791,86 @@ class ManagerWorkspace {
     const cleanTrigger = prefix + keyword;
     const chosenFolder = (folderSelect ? folderSelect.value : 'General') || 'General';
 
-    if (this.isEditingExisting && this.selectedSnippetId) {
-      const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
-      if (current) {
-        const updated: Snippet = {
-          ...current,
-          trigger: cleanTrigger,
-          folder: chosenFolder.trim(),
-          body: bodyTextarea ? bodyTextarea.value : '',
-          enabled: enabledSwitch ? enabledSwitch.checked : true,
-          updatedAt: Date.now(),
-        };
-        await SnippetStore.saveSnippet(updated);
-      }
-    } else {
-      const newId = 'snip-' + Math.random().toString(36).slice(2, 9);
-      const newSnippet: Snippet = {
-        id: newId,
-        trigger: cleanTrigger,
-        body: bodyTextarea ? bodyTextarea.value : '',
-        description: '',
-        folder: chosenFolder.trim(),
-        enabled: enabledSwitch ? enabledSwitch.checked : true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        usageCount: 0,
-      };
-      await SnippetStore.saveSnippet(newSnippet);
-    }
-
+    // Refresh snippets from store to catch concurrent changes (e.g. from other tabs)
     this.snippets = await SnippetStore.getAllSnippets();
-    this.renderFolders();
-    this.renderSnippetList();
 
-    // Close modal sheet
-    const modalBackdrop = document.getElementById('snippet-editor-modal');
-    if (modalBackdrop) {
-      modalBackdrop.classList.remove('open');
-      setTimeout(() => {
-        modalBackdrop.style.display = 'none';
-      }, 280);
+    // Prevent saving if trigger conflicts or duplicates an existing snippet
+    const conflict = ConflictDetector.checkConflict(
+      cleanTrigger,
+      this.selectedSnippetId,
+      this.snippets
+    );
+
+    if (conflict.hasConflict && conflict.message) {
+      this.checkTriggerConflict();
+      this.showSaveToast(conflict.message);
+      triggerInput?.focus();
+      return;
     }
 
-    this.showSaveToast('Snippet saved successfully');
+    this.isSaving = true;
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.classList.add('disabled');
+    }
 
-    // Broadcast update to content scripts
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
+    try {
+      if (this.isEditingExisting && this.selectedSnippetId) {
+        const current = this.snippets.find((s) => s.id === this.selectedSnippetId);
+        if (current) {
+          const updated: Snippet = {
+            ...current,
+            trigger: cleanTrigger,
+            folder: chosenFolder.trim(),
+            body: bodyTextarea ? bodyTextarea.value : '',
+            enabled: enabledSwitch ? enabledSwitch.checked : true,
+            updatedAt: Date.now(),
+          };
+          await SnippetStore.saveSnippet(updated);
+        }
+      } else {
+        const newId = 'snip-' + Math.random().toString(36).slice(2, 9);
+        const newSnippet: Snippet = {
+          id: newId,
+          trigger: cleanTrigger,
+          body: bodyTextarea ? bodyTextarea.value : '',
+          description: '',
+          folder: chosenFolder.trim(),
+          enabled: enabledSwitch ? enabledSwitch.checked : true,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          usageCount: 0,
+        };
+        await SnippetStore.saveSnippet(newSnippet);
+      }
+
+      this.snippets = await SnippetStore.getAllSnippets();
+      this.renderFolders();
+      this.renderSnippetList();
+
+      // Close modal sheet
+      const modalBackdrop = document.getElementById('snippet-editor-modal');
+      if (modalBackdrop) {
+        modalBackdrop.classList.remove('open');
+        setTimeout(() => {
+          modalBackdrop.style.display = 'none';
+        }, 280);
+      }
+
+      this.showSaveToast('Snippet saved successfully');
+
+      // Broadcast update to content scripts
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'SNIPPETS_UPDATED' }).catch(() => {});
+      }
+    } catch (err: any) {
+      this.showSaveToast(err?.message || 'Failed to save snippet');
+      this.checkTriggerConflict();
+    } finally {
+      this.isSaving = false;
+      if (saveBtn) {
+        this.checkTriggerConflict();
+      }
     }
   }
 
@@ -856,11 +893,12 @@ class ManagerWorkspace {
 
   // --- Conflict Detection ---
 
-  private checkTriggerConflict(): void {
+  private checkTriggerConflict(): boolean {
     const triggerInput = document.getElementById('detail-trigger-input') as HTMLInputElement;
     const banner = document.getElementById('conflict-warning-banner');
     const warningText = document.getElementById('conflict-warning-text');
-    if (!triggerInput || !banner || !warningText) return;
+    const saveBtn = document.getElementById('btn-save-snippet') as HTMLButtonElement | null;
+    if (!triggerInput || !banner || !warningText) return false;
 
     const prefix = this.settings.triggerPrefix || '';
     const fullTrigger = prefix + triggerInput.value.trim();
@@ -874,8 +912,18 @@ class ManagerWorkspace {
     if (conflict.hasConflict && conflict.message) {
       warningText.textContent = conflict.message;
       banner.style.display = 'flex';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.classList.add('disabled');
+      }
+      return true;
     } else {
       banner.style.display = 'none';
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('disabled');
+      }
+      return false;
     }
   }
 

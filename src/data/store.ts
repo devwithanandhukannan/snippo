@@ -13,6 +13,21 @@ const STORAGE_KEY_INDEX = 'verbatim_trigger_index_v1';
 const STORAGE_KEY_INITIALIZED = 'verbatim_initialized_v1';
 
 export class SnippetStore {
+  private static storageQueue: Promise<unknown> = Promise.resolve();
+
+  /**
+   * Serializes mutating storage operations to prevent race conditions.
+   */
+  private static async enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const run = async () => {
+      return await operation();
+    };
+
+    const promise = this.storageQueue.then(run, run);
+    this.storageQueue = promise.catch(() => {});
+    return promise;
+  }
+
   /**
    * Helper to check if Chrome extension storage is available.
    */
@@ -87,54 +102,75 @@ export class SnippetStore {
 
   /**
    * Saves (adds or updates) a snippet and refreshes index.
+   * Throws an error if another snippet with the same trigger already exists.
    */
   public static async saveSnippet(snippet: Snippet): Promise<Snippet> {
-    const snippets = await this.getAllSnippets();
-    const existingIdx = snippets.findIndex((s) => s.id === snippet.id);
+    return this.enqueueMutation(async () => {
+      const cleanTrigger = snippet.trigger?.trim();
+      if (!cleanTrigger) {
+        throw new Error('Snippet trigger cannot be empty.');
+      }
 
-    const now = Date.now();
-    const updatedSnippet = {
-      ...snippet,
-      updatedAt: now,
-    };
+      const snippets = await this.getAllSnippets();
+      const existingIdx = snippets.findIndex((s) => s.id === snippet.id);
 
-    if (existingIdx !== -1) {
-      snippets[existingIdx] = updatedSnippet;
-    } else {
-      updatedSnippet.createdAt = now;
-      snippets.unshift(updatedSnippet);
-    }
+      // Enforce unique triggers: no other snippet can have the same trigger
+      const duplicate = snippets.find(
+        (s) => s.id !== snippet.id && s.trigger.trim() === cleanTrigger
+      );
+      if (duplicate) {
+        throw new Error(`Duplicate trigger: "${cleanTrigger}" is already used by another snippet.`);
+      }
 
-    await this.setRaw(STORAGE_KEY_SNIPPETS, snippets);
-    await this.rebuildIndex(snippets);
-    return updatedSnippet;
+      const now = Date.now();
+      const updatedSnippet = {
+        ...snippet,
+        trigger: cleanTrigger,
+        updatedAt: now,
+      };
+
+      if (existingIdx !== -1) {
+        snippets[existingIdx] = updatedSnippet;
+      } else {
+        updatedSnippet.createdAt = snippet.createdAt || now;
+        snippets.unshift(updatedSnippet);
+      }
+
+      await this.setRaw(STORAGE_KEY_SNIPPETS, snippets);
+      await this.rebuildIndex(snippets);
+      return updatedSnippet;
+    });
   }
 
   /**
    * Deletes a snippet by ID and refreshes index.
    */
   public static async deleteSnippet(id: string): Promise<Snippet | null> {
-    const snippets = await this.getAllSnippets();
-    const target = snippets.find((s) => s.id === id);
-    if (!target) return null;
+    return this.enqueueMutation(async () => {
+      const snippets = await this.getAllSnippets();
+      const target = snippets.find((s) => s.id === id);
+      if (!target) return null;
 
-    const filtered = snippets.filter((s) => s.id !== id);
-    await this.setRaw(STORAGE_KEY_SNIPPETS, filtered);
-    await this.rebuildIndex(filtered);
-    return target;
+      const filtered = snippets.filter((s) => s.id !== id);
+      await this.setRaw(STORAGE_KEY_SNIPPETS, filtered);
+      await this.rebuildIndex(filtered);
+      return target;
+    });
   }
 
   /**
    * Increments usage count of a snippet.
    */
   public static async recordUsage(id: string): Promise<void> {
-    const snippets = await this.getAllSnippets();
-    const target = snippets.find((s) => s.id === id);
-    if (target) {
-      target.usageCount = (target.usageCount || 0) + 1;
-      target.lastUsedAt = Date.now();
-      await this.setRaw(STORAGE_KEY_SNIPPETS, snippets);
-    }
+    return this.enqueueMutation(async () => {
+      const snippets = await this.getAllSnippets();
+      const target = snippets.find((s) => s.id === id);
+      if (target) {
+        target.usageCount = (target.usageCount || 0) + 1;
+        target.lastUsedAt = Date.now();
+        await this.setRaw(STORAGE_KEY_SNIPPETS, snippets);
+      }
+    });
   }
 
   /**

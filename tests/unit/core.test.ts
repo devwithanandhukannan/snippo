@@ -140,4 +140,24 @@ describe('ConflictDetector', () => {
     const result = ConflictDetector.checkConflict('/unique', null, snippets);
     expect(result.hasConflict).toBe(false);
   });
+
+  it('detects duplicate trigger even if existing snippet is disabled', () => {
+    const disabledSnippets: Snippet[] = [
+      {
+        id: 'dis-1',
+        trigger: '/disabled_trigger',
+        body: 'Disabled snippet',
+        description: 'Disabled',
+        folder: 'General',
+        enabled: false,
+        createdAt: 1,
+        updatedAt: 1,
+        usageCount: 0,
+      },
+    ];
+
+    const result = ConflictDetector.checkConflict('/disabled_trigger', null, disabledSnippets);
+    expect(result.hasConflict).toBe(true);
+    expect(result.type).toBe('duplicate');
+  });
 });

@@ -106,5 +106,108 @@ describe('SnippetStore', () => {
     await SnippetStore.updateSettings({ enabled: true });
     expect((await SnippetStore.getSettings()).enabled).toBe(true);
   });
+
+  it('throws an error when trying to save a snippet with an existing trigger', async () => {
+    await SnippetStore.init();
+    const snip1: Snippet = {
+      id: 'test-dup-1',
+      trigger: '/samename',
+      body: 'First one',
+      description: 'First',
+      folder: 'General',
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+    };
+    await SnippetStore.saveSnippet(snip1);
+
+    const snip2: Snippet = {
+      id: 'test-dup-2',
+      trigger: '/samename',
+      body: 'Second one with same trigger',
+      description: 'Second',
+      folder: 'General',
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+    };
+
+    await expect(SnippetStore.saveSnippet(snip2)).rejects.toThrow(
+      'Duplicate trigger: "/samename" is already used by another snippet.'
+    );
+
+    const all = await SnippetStore.getAllSnippets();
+    const matching = all.filter((s) => s.trigger === '/samename');
+    expect(matching.length).toBe(1);
+    expect(matching[0].id).toBe('test-dup-1');
+  });
+
+  it('prevents concurrent race conditions when saving snippets at the same time', async () => {
+    await SnippetStore.init();
+    const snipA: Snippet = {
+      id: 'test-race-a',
+      trigger: '/concurrent_trigger',
+      body: 'First concurrent attempt',
+      description: 'A',
+      folder: 'General',
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+    };
+    const snipB: Snippet = {
+      id: 'test-race-b',
+      trigger: '/concurrent_trigger',
+      body: 'Second concurrent attempt with same name',
+      description: 'B',
+      folder: 'General',
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+    };
+
+    // Trigger both saves concurrently at the exact same time
+    const results = await Promise.allSettled([
+      SnippetStore.saveSnippet(snipA),
+      SnippetStore.saveSnippet(snipB),
+    ]);
+
+    // Exactly one must succeed, and one must be rejected due to duplicate trigger
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
+
+    const all = await SnippetStore.getAllSnippets();
+    const matching = all.filter((s) => s.trigger === '/concurrent_trigger');
+    expect(matching.length).toBe(1);
+  });
+
+  it('allows updating an existing snippet without triggering duplicate check on itself', async () => {
+    await SnippetStore.init();
+    const snip: Snippet = {
+      id: 'test-update-self',
+      trigger: '/selfupdate',
+      body: 'Initial body',
+      description: 'Self',
+      folder: 'General',
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+    };
+    await SnippetStore.saveSnippet(snip);
+
+    // Update body with same trigger
+    snip.body = 'Updated body';
+    await expect(SnippetStore.saveSnippet(snip)).resolves.not.toThrow();
+
+    const retrieved = await SnippetStore.getSnippetById('test-update-self');
+    expect(retrieved?.body).toBe('Updated body');
+  });
 });
 

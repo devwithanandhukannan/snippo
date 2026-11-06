@@ -23,20 +23,22 @@ export class ConflictDetector {
       return { hasConflict: false };
     }
 
-    const activeSnippets = snippets.filter(
-      (s) => s.enabled && (!currentSnippetId || s.id !== currentSnippetId)
+    const otherSnippets = snippets.filter(
+      (s) => !currentSnippetId || s.id !== currentSnippetId
     );
 
-    // 1. Exact Duplicate Check
-    const duplicate = activeSnippets.find((s) => s.trigger === cleanProposed);
+    // 1. Exact Duplicate Check (against all snippets, active or disabled)
+    const duplicate = otherSnippets.find((s) => s.trigger.trim() === cleanProposed);
     if (duplicate) {
       return {
         hasConflict: true,
         type: 'duplicate',
-        message: `Duplicate trigger: "${cleanProposed}" is already used by "${duplicate.description || duplicate.trigger}".`,
+        message: `Duplicate trigger: "${cleanProposed}" is already used by "${duplicate.description || duplicate.trigger}"${!duplicate.enabled ? ' (currently disabled)' : ''}.`,
         conflictingSnippetId: duplicate.id,
       };
     }
+
+    const activeSnippets = otherSnippets.filter((s) => s.enabled);
 
     // 2. Prefix Check (Proposed is prefix of existing)
     // E.g. Proposed is "/sh" and existing is "/shrug"
